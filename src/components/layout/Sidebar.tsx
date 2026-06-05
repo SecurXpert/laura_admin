@@ -1,15 +1,28 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { 
-  LayoutDashboard, 
-  FileQuestion, 
-  Users, 
-  Menu, 
-  X,
+import {
+  LayoutDashboard,
+  Users,
+  Layers,
+  BookOpen,
   GraduationCap,
-  User
+  CheckSquare,
+  Calendar,
+  UserPlus,
+  FileText,
+  Shield,
+  User,
+  Trophy,
+  Star,
+  BarChart,
+  LogOut,
+  X,
 } from "lucide-react";
+import { MdKeyboardDoubleArrowRight, MdKeyboardDoubleArrowLeft } from "react-icons/md";
+
 import { Button } from "@/components/ui/button";
+import logo from "@/Assets/lauratek.png";
+import { useToast } from "@/hooks/use-toast";
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -18,94 +31,233 @@ interface SidebarProps {
 
 const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const handleSignOut = () => {
+    localStorage.removeItem("isAuthenticated");
+    localStorage.removeItem("userEmail");
+    toast({
+      title: "Signed Out",
+      description: "You have been successfully signed out.",
+    });
+    navigate("/", { replace: true });
+  };
 
   const menuItems = [
-    {
-      icon: LayoutDashboard,
-      label: "Dashboard",
-      path: "/dashboard",
+    { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
+    { icon: Users, label: "Users", path: "/Allusers" },
+    { icon: Layers, label: "Categories", path: "/categories" },
+    
+   {
+      icon: GraduationCap,
+      label: "Instructors",
+      path: "/instructors",
     },
+    { icon: BookOpen, label: "Courses", path: "/courses" },
     {
-      icon: FileQuestion,
-      label: "Quizzes",
+      icon: CheckSquare,
+      label: "Instructor Quizzes",
       path: "/quizzes",
     },
     {
-      icon: Users,
+      icon: Calendar,
       label: "Attendance",
       path: "/attendance",
     },
-    // {
-    //   icon: User,
-    //   label: "Profile",
-    //   path: "/dashboard/profile",
-    // },
+    {
+      icon: UserPlus,
+      label: "Student Enrollments",
+      path: "/ADMINENROLLMENTS",
+    },
+    {
+      icon: FileText,
+      label: "Assign Course → Instructor",
+      path: "/assign-course",
+    },
+    {
+      icon: FileText,
+      label: "Assign Course → Student",
+      path: "/assign-course-student",
+    },
+    {
+      icon: Shield,
+      label: "Sub admins",
+      path: "/sub-admins",
+    },
+    { icon: User, label: "students", path: "/Students" },
+    {
+      icon: Trophy,
+      label: "Guest Quizzes",
+      path: "/GuestQUizzes",
+    },
+    { icon: Star, label: "Student Reviews", path: "/reviews" },
+    {
+      icon: BarChart,
+      label: "Performace Review",
+      path: "/PerformanceReview",
+    },
+    { icon: User, label: "Guests", path: "/Guest" },
+    { icon: User, label: "Profile", path: "/profile" },
+    { icon: LogOut, label: "Logout", path: "#logout" },
   ];
+
+  const isActive = (path: string) => {
+    if (path === "#logout") return false;
+
+    let currentPath = location.pathname;
+    if (currentPath.startsWith("/dashboard/") && currentPath !== "/dashboard/") {
+      currentPath = currentPath.replace("/dashboard", "");
+    }
+
+    // Dashboard exact match
+    if (path === "/dashboard") {
+      return location.pathname === "/dashboard" || location.pathname === "/dashboard/";
+    }
+
+    // SubAdmins special case
+    if (path === "/sub-admins") {
+      return (
+        currentPath.toLowerCase().startsWith("/sub-admins") ||
+        currentPath.toLowerCase() === "/create-sub-admin"
+      );
+    }
+
+    // Exact match for Assign Course pages
+    if (
+      path === "/assign-course" ||
+      path === "/assign-course-student"
+    ) {
+      return currentPath.toLowerCase() === path.toLowerCase();
+    }
+
+    // Guest exact match
+    if (path === "/Guest") {
+      return currentPath.toLowerCase() === "/guest";
+    }
+
+    // Default
+    return currentPath.toLowerCase().startsWith(path.toLowerCase());
+  };
 
   return (
     <>
-      {/* Mobile overlay */}
       {!isCollapsed && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 z-40 md:hidden"
           onClick={onToggle}
         />
       )}
-      
-      {/* Sidebar */}
-      <div
+
+      <aside
         className={cn(
-          "fixed left-0 top-0 z-50 h-full bg-card border-r border-border transition-all duration-300 ease-in-out",
-          isCollapsed ? "-translate-x-full md:translate-x-0 md:w-16" : "w-64"
+          "fixed z-50 bg-white shadow-lg transition-all duration-300 ease-in-out flex flex-col select-none border border-gray-100/50",
+          "top-4 bottom-4 rounded-[24px]",
+          isCollapsed
+            ? "-translate-x-full md:translate-x-0 md:w-16 left-0 md:left-4"
+            : "w-64 left-4"
         )}
       >
-        {/* Header */}
-        <div className="h-16 border-b border-border flex items-center justify-between px-4">
-          <div className={cn("flex items-center gap-2", isCollapsed && "md:justify-center")}>
-            <div className="w-8 h-8 bg-gradient-to-br from-primary to-info rounded-lg flex items-center justify-center">
-              <GraduationCap className="w-5 h-5 text-white" />
+        {/* Logo Section matching the requested screenshot */}
+        <div className={cn(
+          "pt-6 pb-4 flex items-center justify-between px-4 relative transition-all duration-300",
+          isCollapsed && "flex-col gap-4 px-2 justify-center"
+        )}>
+          {isCollapsed ? (
+            <div className="flex flex-col items-center gap-3 w-full">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onToggle}
+                className="text-gray-600 hover:bg-gray-100 h-10 w-10 flex items-center justify-center rounded-lg"
+                aria-label="Expand Sidebar"
+              >
+                <MdKeyboardDoubleArrowRight className="w-8 h-8 text-gray-700" />
+              </Button>
+              <img
+                src={logo}
+                alt="Lauratek Small Logo"
+                className="w-10 h-10 object-contain transition-all duration-300 animate-in fade-in zoom-in duration-300"
+              />
             </div>
-            {!isCollapsed && (
-              <span className="font-bold text-lg">CourseAdmin</span>
-            )}
-          </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onToggle}
-            className="md:hidden"
-          >
-            <X className="w-4 h-4" />
-          </Button>
+          ) : (
+            <div className="flex items-center justify-center w-full relative">
+              <img
+                src={logo}
+                alt="Lauratek Logo"
+                className="h-11 object-contain transition-all duration-300 animate-in fade-in duration-300"
+              />
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onToggle}
+                className="text-gray-600 hover:bg-gray-100 h-8 w-8 flex items-center justify-center rounded-lg absolute right-0"
+                aria-label="Collapse Sidebar"
+              >
+                <MdKeyboardDoubleArrowLeft className="w-6 h-6 text-gray-700" />
+              </Button>
+            </div>
+          )}
         </div>
 
-        {/* Navigation */}
-        <nav className="p-4 space-y-2">
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = location.pathname === item.path;
-            
-            return (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors",
-                  isActive
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
-                  isCollapsed && "md:justify-center md:px-2"
-                )}
-              >
-                <Icon className="w-5 h-5 flex-shrink-0" />
-                {!isCollapsed && (
-                  <span className="font-medium">{item.label}</span>
-                )}
-              </Link>
-            );
-          })}
-        </nav>
-      </div>
+        {/* Navigation List perfectly aligned with crisp outline icons */}
+        <div className="flex-1 overflow-y-auto scrollbar-hide mt-1">
+          <nav className="space-y-0.5 py-1">
+            {menuItems.map((item) => {
+              const Icon = item.icon;
+              const isLogout = item.path === "#logout";
+
+              if (isLogout) {
+                return (
+                  <button
+                    key={item.path}
+                    onClick={handleSignOut}
+                    title={isCollapsed ? item.label : undefined}
+                    className={cn(
+                      "flex items-center gap-3.5 px-4 py-2.5 mx-3 my-0.5 text-[16px] transition-all duration-200 text-[#64748B] hover:bg-gray-50/80 hover:text-gray-900 font-medium rounded-xl text-left",
+                      isCollapsed && "md:justify-center md:mx-1.5 md:px-0"
+                    )}
+                  >
+                    <Icon className="w-[18px] h-[18px] flex-shrink-0 stroke-[1.75] text-gray-400" />
+                    {!isCollapsed && <span>{item.label}</span>}
+                  </button>
+                );
+              }
+
+              const active = isActive(item.path);
+
+              return (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  title={isCollapsed ? item.label : undefined}
+                  className={cn(
+                    "flex items-center gap-3.5 px-4 py-2.5 mx-3 my-0.5 text-[16px] transition-all duration-200 relative rounded-xl",
+                    active
+                      ? "bg-[#F3E8FF] text-[#5D3EFC] font-semibold"
+                      : "text-[#64748B] hover:bg-gray-50/80 hover:text-gray-900 font-medium",
+                    isCollapsed && "md:justify-center md:mx-1.5 md:px-0"
+                  )}
+                >
+                  {/* Left accent bar for active item precisely matching image */}
+                  {active && !isCollapsed && (
+                    <div className="absolute left-1.5 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-[#5D3EFC] rounded-full" />
+                  )}
+
+                  <Icon
+                    className={cn(
+                      "w-[18px] h-[18px] flex-shrink-0 stroke-[1.75]",
+                      active ? "text-[#5D3EFC]" : "text-gray-400"
+                    )}
+                  />
+
+                  {!isCollapsed && <span>{item.label}</span>}
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
+      </aside>
     </>
   );
 };
