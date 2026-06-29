@@ -151,24 +151,26 @@ const CategoryForm = () => {
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto overflow-x-hidden pb-12">
+    <div className="w-full overflow-x-hidden pb-12 space-y-6">
 
+      {/* HEADER - OUTSIDE THE CARD */}
+      <div className="flex items-center gap-3 w-full">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => navigate("/dashboard/categories")}
+          className="h-8 w-8 text-gray-500 hover:text-gray-900 rounded-full transition-colors flex-shrink-0"
+          title="Back to Categories"
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">
+          {isEdit ? "Edit Category" : "Add Category"}
+        </h1>
+      </div>
+
+      {/* FORM CARD */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6 md:p-8 w-full">
-
-        <div className="flex items-center gap-3 mb-6">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate("/dashboard/categories")}
-            className="h-8 w-8 text-gray-500 hover:text-gray-900 rounded-full transition-colors flex-shrink-0"
-            title="Back to Categories"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">
-            {isEdit ? "Edit Category" : "Add Category"}
-          </h1>
-        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 w-full">
 
@@ -188,7 +190,7 @@ const CategoryForm = () => {
           {/* Dynamically adjust column occupancy based on form mode context */}
           <div className={isEdit ? "w-full" : "md:col-span-2 w-full"}>
             <Label className="text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 block">
-              Name
+              Name <span className="text-red-500">*</span>
             </Label>
             <Input
               name="name"
@@ -202,12 +204,12 @@ const CategoryForm = () => {
 
           <div className="md:col-span-2 w-full mt-1">
             <Label className="text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 block">
-              Description
+              Description <span className="text-red-500">*</span>
             </Label>
             <Textarea
               name="description"
               value={formData.description}
-              maxLength={130}
+              maxLength={170}
               onChange={handleChange}
               placeholder="Enter category description"
               className="min-h-[120px] text-xs sm:text-sm border-gray-200 focus-visible:ring-[#5D3EFC] shadow-sm transition-all resize-y"

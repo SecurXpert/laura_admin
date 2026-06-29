@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from "@/lib/api";import { UserPlus, User, Mail, Lock, ArrowLeft, X, Save } from 'lucide-react';
+import api from "@/lib/api";
+import { UserPlus, User, Mail, Lock, ArrowLeft, X, Save, Eye, EyeOff } from 'lucide-react';
 import { toast } from "@/components/ui/use-toast";
 
 const StudentForm = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const [newStudent, setNewStudent] = useState({
     name: '',
@@ -30,7 +32,7 @@ const StudentForm = () => {
     if (name === "name") {
       value = value.replace(/[^A-Za-z\s]/g, "").slice(0, 40);
     } else if (name === "password") {
-      value = value.slice(0, 8);
+      value = value.slice(0, 30);
     }
     
     setNewStudent((prev) => ({ ...prev, [name]: value }));
@@ -47,10 +49,10 @@ const StudentForm = () => {
       return;
     }
 
-    if (newStudent.password.length > 0 && newStudent.password.length < 8) {
+    if (newStudent.password.length > 0 && (newStudent.password.length < 8 || newStudent.password.length > 30)) {
       toast({
         title: "Validation Error",
-        description: "Password must be at least 8 characters long",
+        description: "Password must be between 8 and 30 characters long",
         className: "bg-red-600 text-white",
         duration: 2000,
       });
@@ -177,15 +179,26 @@ const StudentForm = () => {
             <div className="relative">
               <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 name="password"
                 value={newStudent.password}
                 onChange={handleChange}
                 minLength={8}
-                maxLength={8}
+                maxLength={30}
                 placeholder="********"
-                className="w-full h-11 pl-10 pr-4 bg-[#f8fafc] border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 outline-none text-gray-800 placeholder:text-gray-400 transition-all"
+                className="w-full h-11 pl-10 pr-10 bg-[#f8fafc] border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 outline-none text-gray-800 placeholder:text-gray-400 transition-all"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+              >
+                {showPassword ? (
+                  <EyeOff className="w-4 h-4" />
+                ) : (
+                  <Eye className="w-4 h-4" />
+                )}
+              </button>
             </div>
           </div>
         </div>

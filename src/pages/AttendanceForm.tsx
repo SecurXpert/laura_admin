@@ -1,9 +1,18 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation, useSearchParams } from "react-router-dom";
+import { API_BASE_URL } from "@/services/api/api";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, Info, AlertCircle, CheckCircle2, User, Calendar, Clock, BookOpen } from "lucide-react";
+import { toast } from "@/components/ui/use-toast";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface AttendanceRecord {
   id: number;
@@ -18,6 +27,9 @@ interface AttendanceRecord {
 
 const AttendanceForm = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const record = location.state?.record;
   const { id } = useParams();
   const isEdit = !!id;
   const getISTTodayDateString = () => {
@@ -54,6 +66,43 @@ const AttendanceForm = () => {
     return `${year}-${month}-${day}T${correctedHour}:${minute}`;
   };
 
+  const [courses, setCourses] = useState<any[]>([]);
+  const [students, setStudents] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchDropdownData = async () => {
+      try {
+        const token = localStorage.getItem("access_token");
+        const headers = { Authorization: `Bearer ${token}` };
+
+        // Fetch Courses
+        const courseRes = await fetch(`${API_BASE_URL}/admin/courses`, { headers });
+        if (courseRes.ok) {
+          const courseData = await courseRes.json();
+          let coursesArray = [];
+          if (Array.isArray(courseData)) coursesArray = courseData;
+          else if (courseData?.courses) coursesArray = courseData.courses;
+          else if (courseData?.data) coursesArray = courseData.data;
+          setCourses(coursesArray);
+        }
+
+        // Fetch Users (Students)
+        const userRes = await fetch(`${API_BASE_URL}/admin/users`, { headers });
+        if (userRes.ok) {
+          const userData = await userRes.json();
+          let usersArray = [];
+          if (Array.isArray(userData)) usersArray = userData;
+          else if (userData?.users) usersArray = userData.users;
+          else if (userData?.data) usersArray = userData.data;
+          setStudents(usersArray);
+        }
+      } catch (err) {
+        console.error("Failed to fetch dropdown data", err);
+      }
+    };
+    fetchDropdownData();
+  }, []);
+
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     student_id: "",
@@ -61,6 +110,7 @@ const AttendanceForm = () => {
     check_out_time: "",
     date: "",
     course_id: "",
+    status: "present",
   });
 
   const [selectedRecord, setSelectedRecord] = useState<AttendanceRecord | null>(null);
@@ -68,15 +118,65 @@ const AttendanceForm = () => {
   // Fetch attendance record if in edit mode
   useEffect(() => {
     if (isEdit && id) {
+      const formatDateTimeLocal = (dateTimeString: string | null) => {
+        if (!dateTimeString) return "";
+        try {
+          const cleanStr = dateTimeString.replace(" ", "T");
+          if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(cleanStr)) {
+            return cleanStr.slice(0, 16);
+          }
+          const date = new Date(dateTimeString);
+          if (isNaN(date.getTime())) return dateTimeString;
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const day = String(date.getDate()).padStart(2, '0');
+          const hours = String(date.getHours()).padStart(2, '0');
+          const minutes = String(date.getMinutes()).padStart(2, '0');
+          return `${year}-${month}-${day}T${hours}:${minutes}`;
+        } catch (error) {
+          return dateTimeString || "";
+        }
+      };
+
+      const populateForm = (attendanceData: any) => {
+        const updatedFormData = {
+          student_id: attendanceData.student_id?.toString() || "",
+          check_in_time: formatDateTimeLocal(attendanceData.check_in_time),
+          check_out_time: formatDateTimeLocal(attendanceData.check_out_time),
+          date: attendanceData.date || "",
+          course_id: attendanceData.course_id?.toString() || "",
+          status: attendanceData.status || "present",
+        };
+        setFormData(updatedFormData);
+        setSelectedRecord(attendanceData);
+      };
+
+      // Best path: Data was passed directly from AttendanceDetails
+      if (record) {
+        populateForm(record);
+        return;
+      }
+
+      // Fallback path: Need to fetch from backend (e.g. user refreshed the page)
       const fetchAttendanceRecord = async () => {
         try {
           const token = localStorage.getItem("access_token");
-          if (!token) {
-            throw new Error("No authentication token found");
-          }
+          if (!token) throw new Error("No authentication token found");
 
-          // Try the same endpoint as the list view but with ID parameter
-          const response = await fetch(`https://lauratek.in:8000/attendance/admin/view-attendance?id=${id}`, {
+          const courseIdParam = searchParams.get("course_id");
+          const fromDateParam = searchParams.get("from_date");
+          const toDateParam = searchParams.get("to_date");
+
+          const params = new URLSearchParams();
+          if (courseIdParam) params.append("course_id", courseIdParam);
+          if (fromDateParam) params.append("from_date", fromDateParam);
+          if (toDateParam) params.append("to_date", toDateParam);
+
+          const url = params.toString()
+            ? `${API_BASE_URL}/attendance/admin/view-attendance?${params.toString()}`
+            : `${API_BASE_URL}/attendance/admin/view-attendance`;
+
+          const response = await fetch(url, {
             method: "GET",
             headers: {
               "Content-Type": "application/json",
@@ -84,71 +184,25 @@ const AttendanceForm = () => {
             }
           });
 
-          if (!response.ok) {
-            throw new Error("Failed to fetch attendance record");
-          }
+          if (!response.ok) throw new Error("Failed to fetch attendance record");
 
           const result = await response.json();
-          console.log("Full API response:", result);
-          console.log("Response structure:", JSON.stringify(result, null, 2));
-
-          // Handle different response structures - try multiple approaches
           let attendanceList: any[] = [];
-          if (Array.isArray(result)) {
-            attendanceList = result;
-          } else if (result && Array.isArray(result.data)) {
-            attendanceList = result.data;
-          } else if (result && Array.isArray(result.attendance)) {
-            attendanceList = result.attendance;
-          }
+          if (Array.isArray(result)) attendanceList = result;
+          else if (result && Array.isArray(result.data)) attendanceList = result.data;
+          else if (result && Array.isArray(result.items)) attendanceList = result.items;
 
-          let attendanceData = null;
-          if (attendanceList.length > 0) {
-            attendanceData = attendanceList.find((r: any) => r.id === Number(id)) || attendanceList[0];
-          } else if (result && typeof result === 'object' && result.student_id) {
-            attendanceData = result;
-          }
-
-          console.log("Final attendance data to populate:", attendanceData);
-          console.log("Student ID:", attendanceData?.student_id);
-          console.log("Course ID:", attendanceData?.course_id);
-          console.log("Check-in time:", attendanceData?.check_in_time);
-          console.log("Check-out time:", attendanceData?.check_out_time);
-          console.log("Date:", attendanceData?.date);
-
-          // Format datetime-local values properly
-          const formatDateTimeLocal = (dateTimeString: string) => {
-            if (!dateTimeString) return "";
-            try {
-              const date = new Date(dateTimeString);
-              // Format as YYYY-MM-DDTHH:MM for datetime-local input
-              return date.toISOString().slice(0, 16);
-            } catch (error) {
-              console.error("Error formatting datetime:", error);
-              return dateTimeString;
-            }
-          };
-
-          // Direct form update - bypass any potential issues
+          const attendanceData = attendanceList.find((r: any) => r.id === Number(id));
           if (attendanceData) {
-            const updatedFormData = {
-              student_id: attendanceData.student_id?.toString() || "",
-              check_in_time: formatDateTimeLocal(attendanceData.check_in_time),
-              check_out_time: formatDateTimeLocal(attendanceData.check_out_time),
-              date: attendanceData.date || "",
-              course_id: attendanceData.course_id?.toString() || "",
-            };
-            console.log("Setting form data:", updatedFormData);
-            setFormData(updatedFormData);
-
-            // Additional debugging: check if form actually updated
-            setTimeout(() => {
-              console.log("Form data after update:", formData);
-            }, 200);
+            populateForm(attendanceData);
           } else {
-            console.log("No attendance data found to populate form");
+            console.log("No attendance data found for this ID in the fetched list");
+            toast({
+              title: "Record Not Found",
+              description: "Could not locate this attendance record.",
+              variant: "destructive"
+            });
           }
-
         } catch (error) {
           console.error("Error fetching attendance record:", error);
         }
@@ -156,7 +210,7 @@ const AttendanceForm = () => {
 
       fetchAttendanceRecord();
     }
-  }, [isEdit, id]);
+  }, [isEdit, id, record, searchParams]);
 
   const handleChange = (e: any) => {
     let { name, value } = e.target;
@@ -205,7 +259,7 @@ const AttendanceForm = () => {
         throw new Error("No authentication token found");
       }
 
-      const response = await fetch(`https://lauratek.in:8000/attendance/admin/view-attendance`, {
+      const response = await fetch(`${API_BASE_URL}/attendance/admin/view-attendance`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -228,6 +282,19 @@ const AttendanceForm = () => {
   };
 
   const handleSubmit = async () => {
+    if (formData.check_in_time && formData.check_out_time) {
+      const checkInDate = new Date(formData.check_in_time);
+      const checkOutDate = new Date(formData.check_out_time);
+      if (checkOutDate <= checkInDate) {
+        toast({
+          title: "Invalid Duration",
+          description: "Check-out time must be after check-in time.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
     setLoading(true);
 
     try {
@@ -237,10 +304,25 @@ const AttendanceForm = () => {
       }
 
       const url = id
-        ? `https://lauratek.in:8000/attendance/admin/edit/${id}`
-        : `https://lauratek.in:8000/attendance/admin/add`;
+        ? `${API_BASE_URL}/attendance/admin/edit/${id}`
+        : `${API_BASE_URL}/attendance/admin/add`;
 
       const method = isEdit ? "PUT" : "POST";
+
+      let duration_hours = 0;
+      if (formData.check_in_time && formData.check_out_time) {
+        const start = new Date(formData.check_in_time);
+        const end = new Date(formData.check_out_time);
+        const diffMs = end.getTime() - start.getTime();
+        if (diffMs > 0) {
+          duration_hours = Number((diffMs / (1000 * 60 * 60)).toFixed(2));
+        }
+      }
+
+      const payload = {
+        ...formData,
+        duration_hours
+      };
 
       const response = await fetch(url, {
         method: method,
@@ -248,7 +330,7 @@ const AttendanceForm = () => {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(payload)
       });
 
       if (!response.ok) {
@@ -258,13 +340,22 @@ const AttendanceForm = () => {
       const result = await response.json();
       console.log(`${isEdit ? "Updated" : "Created"} attendance:`, result);
 
-      navigate("/dashboard/attendance", { 
-        state: { flashToast: isEdit ? "Update attendance successfully" : "Create attendance successfully" } 
+      toast({
+        title: isEdit ? "Updated" : "Created",
+        description: isEdit ? "Attendance updated successfully" : "Attendance created successfully",
+        className: "bg-green-600 text-white",
+        duration: 2000,
       });
+
+      navigate("/dashboard/attendance");
 
     } catch (error) {
       console.error(`Error ${isEdit ? "updating" : "creating"} attendance:`, error);
-      // You might want to show an error message to the user here
+      toast({
+        title: "Error",
+        description: `Failed to ${isEdit ? "update" : "create"} attendance`,
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -272,7 +363,7 @@ const AttendanceForm = () => {
 
   return (
     <div className="space-y-6 relative">
-      
+
       {/* HEADER */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
@@ -325,17 +416,24 @@ const AttendanceForm = () => {
                     <User className="h-4 w-4 text-indigo-600" />
 
                     <label className="text-sm font-medium text-gray-700">
-                      Student ID *
+                      Student ID <span className="text-red-500">*</span>
                     </label>
                   </div>
 
-                  <Input
-                    name="student_id"
-                    placeholder="Enter student ID"
-                    value={formData.student_id}
-                    onChange={handleChange}
-                    className="h-11 w-full rounded-xl border border-gray-300"
-                  />
+                <div className="relative">
+                  <Select name="student_id" value={formData.student_id || undefined} onValueChange={(val) => handleChange({ target: { name: "student_id", value: val } })}>
+                    <SelectTrigger className="h-11 w-full rounded-xl border border-gray-300 px-3 bg-white outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer shadow-none">
+                      <SelectValue placeholder="Select Student" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {students.map((student) => (
+                        <SelectItem key={student.id} value={student.id.toString()}>
+                          {student.name} (ID: {student.id})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
                 </div>
               )}
 
@@ -345,18 +443,24 @@ const AttendanceForm = () => {
                   <BookOpen className="h-4 w-4 text-orange-600" />
 
                   <label className="text-sm font-medium text-gray-700">
-                    Course ID *
+                    Course ID <span className="text-red-500">*</span>
                   </label>
                 </div>
 
-                <Input
-                  name="course_id"
-                  placeholder="Enter course ID"
-                  value={isEdit ? formData.course_id : formData.course_id}
-                  onChange={handleChange}
-                  disabled={isEdit}
-                  className={`h-11 w-full rounded-xl border border-gray-300 ${isEdit ? "bg-gray-100 text-gray-500" : ""}`}
-                />
+              <div className="relative">
+                <Select name="course_id" value={formData.course_id || undefined} onValueChange={(val) => handleChange({ target: { name: "course_id", value: val } })} disabled={isEdit}>
+                  <SelectTrigger className={`h-11 w-full rounded-xl border border-gray-300 px-3 focus:ring-2 focus:ring-indigo-500 outline-none ${isEdit ? "bg-gray-100 text-gray-500" : "bg-white"} cursor-pointer shadow-none`}>
+                    <SelectValue placeholder="Select Course" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {courses.map((course) => (
+                      <SelectItem key={course.id} value={course.id.toString()}>
+                        {course.title || `Course ID: ${course.id}`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               </div>
 
               {/* Date */}
@@ -366,7 +470,7 @@ const AttendanceForm = () => {
                     <Calendar className="h-4 w-4 text-blue-600" />
 
                     <label className="text-sm font-medium text-gray-700">
-                      Date *
+                      Date <span className="text-red-500">*</span>
                     </label>
                   </div>
 
@@ -394,14 +498,14 @@ const AttendanceForm = () => {
                     <Clock className="h-4 w-4 text-green-600" />
 
                     <label className="text-sm font-medium text-gray-700">
-                      Check-in Time *
+                      Check-in Time <span className="text-red-500">*</span>
                     </label>
                   </div>
 
                   <Input
                     type="datetime-local"
                     name="check_in_time"
-                    min={getISTCurrentDateTimeString()}
+                    min={isEdit ? undefined : getISTCurrentDateTimeString()}
                     value={formData.check_in_time}
                     onChange={handleChange}
                     className="h-11 w-full rounded-xl border border-gray-300"
@@ -414,19 +518,40 @@ const AttendanceForm = () => {
                     <Clock className="h-4 w-4 text-red-600" />
 
                     <label className="text-sm font-medium text-gray-700">
-                      Check-out Time *
+                      Check-out Time <span className="text-red-500">*</span>
                     </label>
                   </div>
 
                   <Input
                     type="datetime-local"
                     name="check_out_time"
-                    min={formData.check_in_time || getISTCurrentDateTimeString()}
+                    min={isEdit ? undefined : (formData.check_in_time || getISTCurrentDateTimeString())}
                     value={formData.check_out_time}
                     onChange={handleChange}
                     className="h-11 w-full rounded-xl border border-gray-300"
                   />
                 </div>
+              </div>
+
+              {/* Status Dropdown */}
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <User className="h-4 w-4 text-emerald-600" />
+                  <label className="text-sm font-medium text-gray-700">
+                    Status <span className="text-red-500">*</span>
+                  </label>
+                </div>
+              <div className="relative">
+                <Select name="status" value={formData.status || undefined} onValueChange={(val) => handleChange({ target: { name: "status", value: val } })}>
+                  <SelectTrigger className="h-11 w-full rounded-xl border border-gray-300 px-3 bg-white focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer shadow-none">
+                    <SelectValue placeholder="Select Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="present">Present</SelectItem>
+                    <SelectItem value="absent">Absent</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               </div>
 
               {/* Duration */}
@@ -519,7 +644,15 @@ const AttendanceForm = () => {
                   <div className="bg-[#f9fafb] p-3 rounded-xl">
                     <span className="block text-[11px] text-gray-400 font-medium mb-1">Student</span>
                     <span className="text-xs font-bold text-gray-900">
-                      Student ID: {formData.student_id || "Not entered"}
+                      {formData.student_id ? (students.find(s => (s.id || s.student_id || s.user_id)?.toString() === formData.student_id.toString())?.name || `Student ID: ${formData.student_id}`) : "Not entered"}
+                    </span>
+                  </div>
+
+                  {/* Course */}
+                  <div className="bg-[#f9fafb] p-3 rounded-xl">
+                    <span className="block text-[11px] text-gray-400 font-medium mb-1">Course</span>
+                    <span className="text-xs font-bold text-gray-900">
+                      {formData.course_id ? (courses.find(c => c.id?.toString() === formData.course_id.toString())?.title || `Course ID: ${formData.course_id}`) : "Not selected"}
                     </span>
                   </div>
 
@@ -540,12 +673,21 @@ const AttendanceForm = () => {
                     </div>
                   </div>
 
-                  {/* Status */}
-                  <div className="bg-[#f9fafb] p-3 rounded-xl">
-                    <span className="block text-[11px] text-gray-400 font-medium mb-1">Status</span>
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800">
-                      Present
-                    </span>
+                  {/* Date & Status */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-[#f9fafb] p-3 rounded-xl">
+                      <span className="block text-[11px] text-gray-400 font-medium mb-1">Date</span>
+                      <span className="text-xs font-bold text-gray-900">
+                        {formData.date ? new Date(formData.date).toLocaleDateString("en-IN") : "Not entered"}
+                      </span>
+                    </div>
+
+                    <div className="bg-[#f9fafb] p-3 rounded-xl">
+                      <span className="block text-[11px] text-gray-400 font-medium mb-1">Status</span>
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 capitalize">
+                        {formData.status || "Present"}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>

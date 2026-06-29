@@ -12,6 +12,7 @@ import AttendanceForm from "./pages/AttendanceForm";
 import AttendanceDetails from "./pages/AttendanceDetails";
 import Courses from "./pages/Courses";
 import Profile from "./pages/Profile";
+import AdminQuizzes from "./pages/AdminQuizzes";
 import NotFound from "./pages/NotFound";
 import AllUsers from "./pages/Allusers";
 
@@ -31,7 +32,10 @@ import SubAdmins from "./pages/SubAdmins";
 import Student from "./pages/Student";
 import StudentForm from "./pages/StudentForm";
 import StudentEdit from "./pages/StudentEdit";
+import ViewStreak from "./pages/ViewStreak";
 
+import LiveClasses from "./pages/LiveClasses";
+import RecordedVideos from "./pages/RecordedVideos";
 import DashboardLayout from "./components/layout/DashboardLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminLogin from "./pages/Login";
@@ -40,8 +44,25 @@ import GuestQuizzes from "./pages/GuestQuizzes";
 import Reviews from "./pages/Reviews";
 import PerformanceReview from "./pages/PerformanceReview";
 import Guest from "./pages/Guest";
+import GuestExams from "./pages/GuestExams";
+import ViewGuestExam from "./pages/ViewGuestExam";
+import GuestCompilerQuestions from "./pages/GuestCompilerQuestions";
+import GuestCompilerQuestion from "./pages/GuestCompilerQuestion";
+import ViewGuestCompilerQuestion from "./pages/ViewGuestCompilerQuestion";
+
+// Student components
+import StudentExams from "./pages/StudentExams";
+import ViewStudentExam from "./pages/ViewStudentExam";
+import StudentCompilerQuestions from "./pages/StudentCompilerQuestions";
+import StudentCompilerQuestion from "./pages/StudentCompilerQuestion";
+import ViewStudentCompilerQuestion from "./pages/ViewStudentCompilerQuestion";
+
 import CreateSubAdmin from "./pages/CreateSubadmin";
 import ScrollToTop from "./components/ScrollToTop";
+import RegisteredUsers from "./pages/RegisteredUsers";
+import Certificates from "./pages/Certificates";
+import ResumeBuilder from "./pages/Resume";
+import Results from "./pages/Results";
 
 
 
@@ -71,8 +92,11 @@ const App = () => {
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="all-users" element={<AllUsers />} />
               <Route path="guestquizzes" element={<GuestQuizzes />} />
+              <Route path="live-classes" element={<LiveClasses />} />
+              <Route path="recorded-videos" element={<RecordedVideos />} />
 
               {/* Main */}
+              <Route path="admin-quizzes" element={<AdminQuizzes />} />
               <Route path="quizzes" element={<Quizzes />} />
               <Route path="attendance" element={<Attendance />} />
               <Route path="attendance/add" element={<AttendanceForm />} />
@@ -83,9 +107,28 @@ const App = () => {
               <Route path="Allusers" element={<AllUsers />} />
               <Route path="guestquizzes" element={<GuestQuizzes />} />
               <Route path="GuestQUizzes" element={<GuestQuizzes />} />
+              <Route path="guest-exams" element={<GuestExams />} />
+              <Route path="guest-exams/view/:id" element={<ViewGuestExam />} />
+              <Route path="guest-compiler-questions" element={<GuestCompilerQuestions />} />
+              <Route path="guest-compiler-questions/add" element={<GuestCompilerQuestion />} />
+              <Route path="guest-compiler-questions/edit/:id" element={<GuestCompilerQuestion />} />
+              <Route path="guest-compiler-questions/view/:id" element={<ViewGuestCompilerQuestion />} />
+
+              {/* Student Exams and Compilers */}
+              <Route path="student-exams" element={<StudentExams />} />
+              <Route path="student-exams/view/:id" element={<ViewStudentExam />} />
+              <Route path="student-compiler-questions" element={<StudentCompilerQuestions />} />
+              <Route path="student-compiler-questions/add" element={<StudentCompilerQuestion />} />
+              <Route path="student-compiler-questions/edit/:id" element={<StudentCompilerQuestion />} />
+              <Route path="student-compiler-questions/view/:id" element={<ViewStudentCompilerQuestion />} />
+
               <Route path="reviews" element={<Reviews />} />
               <Route path="PerformanceReview" element={<PerformanceReview />} />
               <Route path="Guest" element={<Guest />} />
+              <Route path="registered-users" element={<RegisteredUsers />} />
+              <Route path="certificates" element={<Certificates />} />
+              <Route path="resumes" element={<ResumeBuilder />} />
+              <Route path="results" element={<Results />} />
 
               {/* Services */}
               <Route path="categories" element={<Categories />} />
@@ -108,6 +151,8 @@ const App = () => {
               <Route path="Students/add" element={<StudentForm />} />
               <Route path="students/edit/:id" element={<StudentEdit />} />
               <Route path="Students/edit/:id" element={<StudentEdit />} />
+              <Route path="students/streak/:id" element={<ViewStreak />} />
+              <Route path="Students/streak/:id" element={<ViewStreak />} />
 
               <Route path="Userprofile" element={<UserProfile />} />
 
@@ -136,6 +181,8 @@ const App = () => {
               <Route index element={<Dashboard />} />
               <Route path="all-users" element={<AllUsers />} />
               <Route path="guestquizzes" element={<GuestQuizzes />} />
+              <Route path="live-classes" element={<LiveClasses />} />
+              <Route path="recorded-videos" element={<RecordedVideos />} />
 
               {/* Main */}
               <Route path="quizzes" element={<Quizzes />} />
@@ -152,6 +199,9 @@ const App = () => {
               <Route path="reviews" element={<Reviews />} />
               <Route path="PerformanceReview" element={<PerformanceReview />} />
               <Route path="Guest" element={<Guest />} />
+              <Route path="registered-users" element={<RegisteredUsers />} />
+              <Route path="certificates" element={<Certificates />} />
+              <Route path="results" element={<Results />} />
 
               {/* Services */}
               <Route path="categories" element={<Categories />} />
@@ -174,6 +224,8 @@ const App = () => {
               <Route path="Students/add" element={<StudentForm />} />
               <Route path="students/edit/:id" element={<StudentEdit />} />
               <Route path="Students/edit/:id" element={<StudentEdit />} />
+              <Route path="students/streak/:id" element={<ViewStreak />} />
+              <Route path="Students/streak/:id" element={<ViewStreak />} />
 
               <Route path="Userprofile" element={<UserProfile />} />
 

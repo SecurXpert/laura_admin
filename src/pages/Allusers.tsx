@@ -55,33 +55,15 @@ const AllUsers = () => {
       );
       const apiData = res.data;
       let data = Array.isArray(apiData) ? apiData : (apiData?.users || apiData?.data || apiData?.items || []);
+      const sorted = [...data].sort((a: any, b: any) => b.id - a.id);
       
-      // Inject dummy data if backend is empty
-      if (data.length === 0) {
-        data = [
-          { id: 1, name: "Admin Setup", email: "admin@lauratek.com", role: "admin", created_at: new Date().toISOString() },
-          { id: 2, name: "John Instructor", email: "john.inst@lauratek.com", role: "instructor", created_at: new Date().toISOString() },
-          { id: 3, name: "Alice Student", email: "alice.stud@example.com", role: "student", created_at: new Date().toISOString() }
-        ];
-        toast({ title: "Using Dummy Data", description: "Backend returned 0 users, so mock data is being shown.", variant: "default" });
-      }
-
-      setUsers(data);
+      setUsers(sorted);
     } catch (err: any) {
       if (err.response?.status === 401) {
         setError("Unauthorized: Admin access required");
       } else {
-        console.error("Failed to load users from server. Loading demonstration dataset.");
-        // Fallback sample users to guarantee responsive layout review functionality
-        setUsers([
-          { id: 101, name: "Alexander Wright", email: "alexander.w@lauratek.com", role: "Admin" },
-          { id: 102, name: "Sophia Martinez", email: "sophia.m@lauratek.com", role: "Trainer" },
-          { id: 103, name: "Liam Chen", email: "liam.chen@student.edu", role: "Student" },
-          { id: 104, name: "Emma Watson", email: "emma.watson@student.edu", role: "Student" },
-          { id: 105, name: "David Miller", email: "david.miller@lauratek.com", role: "Trainer" },
-          { id: 106, name: "Olivia Taylor", email: "olivia.t@student.edu", role: "Student" },
-          { id: 107, name: "James Anderson", email: "james.a@student.edu", role: "Student" },
-        ]);
+        console.error("Failed to load users from server.", err);
+        setError("Failed to load users from server.");
       }
     } finally {
       setLoading(false);
@@ -128,11 +110,21 @@ const AllUsers = () => {
     const value = search.toLowerCase();
     const role = user.role?.toLowerCase() || "";
 
+    // Determine display role to match the rendered UI
+    let displayRole = role;
+    if (role === "trainer" || role === "instructor") {
+      displayRole = "instructor";
+    }
+
+    // Normalize roles for robust search (e.g., "sub_admin" -> "subadmin")
+    const normalizedRole = role.replace(/[\s_]/g, "");
+
     return (
-      user.id.toString().includes(value) ||
       user.name.toLowerCase().includes(value) ||
       user.email.toLowerCase().includes(value) ||
-      role.includes(value)
+      role.includes(value) ||
+      displayRole.includes(value) ||
+      normalizedRole.includes(value)
     );
   });
 
@@ -148,9 +140,14 @@ const AllUsers = () => {
     <div className="w-full max-w-7xl mx-auto overflow-x-hidden pb-12">
       {/* HEADER SECTION */}
       <div className="flex items-center justify-between gap-4 mb-6 w-full">
-        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">
-          Users
-        </h1>
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-[#1a1744] tracking-tight">
+            All Users
+          </h1>
+          <p className="text-md sm:text-md text-[#4B5563] mt-1 font-medium">
+            Manage and monitor your platform users
+          </p>
+        </div>
 
         {/* Responsive search input */}
         <div className="relative w-48 sm:w-72 max-w-[65%]">
@@ -158,7 +155,7 @@ const AllUsers = () => {
 
           <Input
             className="w-full pl-10 pr-4 py-2 text-xs sm:text-sm border border-gray-200 rounded-full bg-white shadow-sm focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-[#5D3EFC] focus-visible:border-[#5D3EFC] focus-visible:ring-offset-0 placeholder:text-gray-400 transition-all"
-            placeholder="Search ID, Name, Role, Email ..."
+            placeholder="Search by Name, Role, Email ..."
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -190,7 +187,6 @@ const AllUsers = () => {
               <Table className="w-full min-w-[620px] text-sm border-collapse">
                 <TableHeader>
                   <TableRow className="border-t-2 border-b-2 border-gray-100" style={{ background: 'linear-gradient(90deg, #7B2FF7 0%, #752EF4 7.69%, #6F2EF1 15.38%, #692DEE 23.08%, #642CEB 30.77%, #5E2BE8 38.46%, #582AE5 46.15%, #5229E2 53.85%, #4C27E0 61.54%, #4626DD 69.23%, #3F25DA 76.92%, #3923D7 84.62%, #3221D4 92.31%, #2B1FD1 100%)' }}>
-                    <TableHead className="px-6 py-4 text-left align-middle text-[14px] font-bold text-white tracking-wider uppercase whitespace-nowrap">ID</TableHead>
                     <TableHead className="px-6 py-4 text-left align-middle text-[14px] font-bold text-white tracking-wider uppercase whitespace-nowrap">Name</TableHead>
                     <TableHead className="px-6 py-4 text-left align-middle text-[14px] font-bold text-white tracking-wider uppercase whitespace-nowrap">Email</TableHead>
                     <TableHead className="px-6 py-4 text-left align-middle text-[14px] font-bold text-white tracking-wider uppercase whitespace-nowrap">Role</TableHead>
@@ -201,10 +197,6 @@ const AllUsers = () => {
                 <TableBody className="divide-y-2 divide-gray-100">
                   {currentUsers.map((u) => (
                     <TableRow key={u.id} className="hover:bg-gray-50/50 transition-colors bg-white">
-                      <TableCell className="px-6 py-5 text-left align-middle text-[16px] text-[#1F2937] font-medium whitespace-nowrap">
-                        {u.id}
-                      </TableCell>
-
                       <TableCell className="px-6 py-5 text-left align-middle text-[16px] text-[#6B7280] font-medium max-w-[160px] truncate">
                         {u.name}
                       </TableCell>
@@ -214,7 +206,7 @@ const AllUsers = () => {
                       </TableCell>
 
                       <TableCell className="px-6 py-5 align-middle whitespace-nowrap">
-                        <Badge
+                        <span
                           className={`text-[16px] font-semibold px-[12px] py-[5px] rounded-full border-none shadow-none capitalize inline-flex items-center justify-center ${u.role?.toLowerCase() === "admin"
                               ? "bg-[#E0E7FF] text-[#4338CA]"
                               : u.role?.toLowerCase() === "trainer" || u.role?.toLowerCase() === "instructor"
@@ -229,7 +221,7 @@ const AllUsers = () => {
                             : u.role
                               ? u.role.charAt(0).toUpperCase() + u.role.slice(1).toLowerCase()
                               : ""}
-                        </Badge>
+                        </span>
                       </TableCell>
 
                       <TableCell className="px-6 py-5 text-right align-middle whitespace-nowrap">
@@ -238,13 +230,13 @@ const AllUsers = () => {
                           size="sm"
                           disabled={deletingId === u.id}
                           onClick={() => handleDelete(u.id)}
-                          className="bg-red-50 text-[#991B1B] hover:bg-[#991B1B] hover:text-white h-8 w-8 p-0 rounded-lg inline-flex items-center justify-center transition-all duration-200 shadow-sm border border-red-100/50"
+                          className="bg-red-100 text-red-500 hover:bg-red-200 hover:text-red-600 font-medium h-8 px-4 py-1 rounded-xl inline-flex items-center justify-center transition-all duration-200"
                           title="Delete User"
                         >
                           {deletingId === u.id ? (
-                            <Loader2 className="h-4 w-4 animate-spin text-[#991B1B]" />
+                            <Loader2 className="h-4 w-4 animate-spin" />
                           ) : (
-                            <Trash2 className="h-4 w-4 stroke-[1.75]" />
+                            "Delete"
                           )}
                         </Button>
                       </TableCell>
@@ -253,7 +245,7 @@ const AllUsers = () => {
 
                   {currentUsers.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center py-8 text-gray-400 text-xs sm:text-sm">
+                      <TableCell colSpan={4} className="text-center py-8 text-gray-400 text-xs sm:text-sm">
                         No users match your search criteria
                       </TableCell>
                     </TableRow>

@@ -1,39 +1,63 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { API_BASE_URL } from "@/services/api/api";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Calendar, Clock, Pencil, Trash2, ArrowLeft } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "@/components/ui/use-toast";
 
 interface AttendanceRecord {
-  id: number;
+  id?: number;
   student_id: number;
   student_name: string;
-  check_in_time: string;
   course_id: number;
-  check_out_time: string;
+  date: string;
+  status: string;
+  check_in_time: string | null;
+  check_out_time: string | null;
   duration_hours: number;
 }
 
 const AttendanceDetails = () => {
   const navigate = useNavigate();
   const { studentId } = useParams();
+  const [searchParams] = useSearchParams();
+  const courseId = searchParams.get("course_id");
+  const fromDate = searchParams.get("from_date");
+  const toDate = searchParams.get("to_date");
+
   const [attendanceData, setAttendanceData] = useState<AttendanceRecord[]>([]);
   const [loading, setLoading] = useState(true);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8;
 
   const fetchAttendance = async () => {
     try {
-      const token = localStorage.getItem("access_token");
+      const token = localStorage.getItem("access_token") || localStorage.getItem("token");
+      const urlParams = new URLSearchParams();
+      if (courseId) urlParams.append("course_id", courseId);
+      if (fromDate) urlParams.append("from_date", fromDate);
+      if (toDate) urlParams.append("to_date", toDate);
+
       const res = await fetch(
-        `https://lauratek.in:8000/attendance/admin/view-attendance`,
+        `${API_BASE_URL}/attendance/admin/view-attendance?${urlParams.toString()}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
+      if (!res.ok) throw new Error("Failed to fetch");
+
       const data = await res.json();
-      setAttendanceData(data);
+      let records = Array.isArray(data) ? data : (data.data || data.items || []);
+      records = [...records].sort((a: any, b: any) => {
+        const idA = a.id || 0;
+        const idB = b.id || 0;
+        return idB - idA;
+      });
+      setAttendanceData(records);
+      setCurrentPage(1);
     } catch (err) {
       console.error("Error fetching attendance:", err);
     } finally {
@@ -43,7 +67,7 @@ const AttendanceDetails = () => {
 
   useEffect(() => {
     fetchAttendance();
-  }, []);
+  }, [studentId, courseId, fromDate, toDate]);
 
   const handleDelete = async (id: number) => {
     if (!window.confirm("Are you sure you want to delete?")) return;
@@ -52,7 +76,7 @@ const AttendanceDetails = () => {
       const token = localStorage.getItem("access_token");
 
       const res = await fetch(
-        `https://lauratek.in:8000/attendance/admin/delete/${id}`,
+        `${API_BASE_URL}/attendance/admin/delete/${id}`,
         {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },
@@ -62,12 +86,20 @@ const AttendanceDetails = () => {
       if (!res.ok) throw new Error("Delete failed");
       await fetchAttendance();
 
-      setToastMessage("Delete Successfully");
-      setTimeout(() => setToastMessage(null), 3000);
+      toast({
+        title: "Deleted",
+        description: "Deleted successfully",
+        className: "bg-red-500 text-white",
+        duration: 2000,
+      });
 
     } catch (err) {
       console.error("Delete error:", err);
-      alert("Failed to delete attendance");
+      toast({
+        title: "Error",
+        description: "Failed to delete attendance",
+        variant: "destructive",
+      });
     }
   };
 
@@ -75,22 +107,17 @@ const AttendanceDetails = () => {
     (record) => record.student_id === Number(studentId)
   );
 
+  const paginatedAttendance = studentAttendance.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const totalPages = Math.ceil(studentAttendance.length / itemsPerPage);
+
   const studentName = studentAttendance.length > 0 ? studentAttendance[0].student_name : "Student";
 
   return (
     <div className="w-full max-w-7xl mx-auto overflow-x-hidden pb-12 space-y-6 relative">
-
-      {/* LARGE TOAST MESSAGE */}
-      {toastMessage && (
-        <div className="fixed bottom-10 right-10 z-[9999] transition-all duration-300">
-          <div className="bg-red-500 text-white px-8 py-5 rounded-2xl shadow-2xl flex items-center gap-4 text-lg font-bold tracking-wide border-2 border-red-600">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-white" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-            </svg>
-            {toastMessage}
-          </div>
-        </div>
-      )}
 
       {/* HEADER WITH BACK BUTTON */}
       <div className="flex items-center gap-4 mb-6">
@@ -144,7 +171,7 @@ const AttendanceDetails = () => {
                       Duration
                     </TableHead>
                     <TableHead className="text-[#4A5565] font-semibold whitespace-nowrap">
-                      Attendance ID
+                      Status
                     </TableHead>
                     <TableHead className="text-[#4A5565] font-semibold whitespace-nowrap">
                       Course Id
@@ -164,16 +191,16 @@ const AttendanceDetails = () => {
                       </TableCell>
                     </TableRow>
                   )}
-                  {studentAttendance.map((record) => (
+                  {paginatedAttendance.map((record, index) => (
                     <TableRow
-                      key={record.id}
+                      key={record.id || index}
                       className="bg-white hover:bg-gray-100 transition rounded-lg"
                     >
                       {/* DATE */}
                       <TableCell>
                         <div className="flex items-center gap-2 font-medium text-gray-700 whitespace-nowrap">
                           <Calendar className="w-4 h-4 text-[#99A1AF]" />
-                          {new Date(record.check_in_time).toLocaleDateString()}
+                          {record.date ? new Date(record.date).toLocaleDateString() : "-"}
                         </div>
                       </TableCell>
 
@@ -181,7 +208,7 @@ const AttendanceDetails = () => {
                       <TableCell>
                         <div className="flex items-center gap-2 font-medium text-gray-700 whitespace-nowrap">
                           <Clock className="w-4 h-4 text-green-600" />
-                          {new Date(record.check_in_time).toLocaleTimeString()}
+                          {record.check_in_time ? new Date(record.check_in_time).toLocaleTimeString() : "-"}
                         </div>
                       </TableCell>
 
@@ -189,7 +216,7 @@ const AttendanceDetails = () => {
                       <TableCell>
                         <div className="flex items-center gap-2 font-medium text-gray-700 whitespace-nowrap">
                           <Clock className="w-4 h-4 text-red-600" />
-                          {new Date(record.check_out_time).toLocaleTimeString()}
+                          {record.check_out_time ? new Date(record.check_out_time).toLocaleTimeString() : "-"}
                         </div>
                       </TableCell>
 
@@ -197,14 +224,14 @@ const AttendanceDetails = () => {
                       <TableCell>
                         <div className="flex flex-col gap-1 min-w-[120px]">
                           <span className="text-sm font-semibold text-gray-800">
-                            {record.duration_hours}
+                            {record.duration_hours || 0}
                           </span>
                           <div className="w-full h-2 bg-green-100 rounded-full overflow-hidden">
                             <div
                               className="h-full bg-green-500 rounded-full"
                               style={{
                                 width: `${Math.min(
-                                  (parseFloat(record.duration_hours.toString()) / 8) * 100,
+                                  (parseFloat((record.duration_hours || 0).toString()) / 8) * 100,
                                   100
                                 )}%`,
                               }}
@@ -213,8 +240,14 @@ const AttendanceDetails = () => {
                         </div>
                       </TableCell>
 
-                      <TableCell className="font-medium text-gray-700">
-                        {record.id}
+                      {/* STATUS */}
+                      <TableCell className="font-medium">
+                        <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${record.status?.toLowerCase() === "present" ? "bg-green-100 text-green-700" :
+                            record.status?.toLowerCase() === "absent" ? "bg-red-100 text-red-700" :
+                              "bg-gray-100 text-gray-700"
+                          }`}>
+                          {record.status || "UNKNOWN"}
+                        </span>
                       </TableCell>
 
                       <TableCell className="font-medium text-gray-700">
@@ -228,7 +261,7 @@ const AttendanceDetails = () => {
                             size="icon"
                             variant="ghost"
                             className="h-8 w-8 text-blue-600 hover:bg-blue-100 rounded-lg"
-                            onClick={() => navigate(`/dashboard/attendance/edit/${record.id}`)}
+                            onClick={() => navigate(`/dashboard/attendance/edit/${record.id || ""}`, { state: { record } })}
                           >
                             <Pencil className="w-4 h-4" />
                           </Button>
@@ -236,7 +269,7 @@ const AttendanceDetails = () => {
                             size="icon"
                             variant="ghost"
                             className="h-8 w-8 text-red-600 hover:bg-red-100 rounded-lg"
-                            onClick={() => handleDelete(record.id)}
+                            onClick={() => handleDelete(record.id as number)}
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
@@ -247,6 +280,60 @@ const AttendanceDetails = () => {
                 </TableBody>
               </Table>
             </div>
+
+            {/* ================= PAGINATION ================= */}
+            {studentAttendance.length > 0 && (
+              <div className="flex flex-col sm:flex-row items-center justify-between py-4 mt-4 border-t border-gray-100 gap-4 w-full">
+                <div className="text-[13px] font-medium text-[#6B7280]">
+                  Showing {studentAttendance.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}-{Math.min(currentPage * itemsPerPage, studentAttendance.length)} of {studentAttendance.length}
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="px-4 py-1.5 rounded-full border border-gray-200 text-[#374151] text-[13px] font-semibold hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-white h-[34px] flex items-center justify-center"
+                  >
+                    Previous
+                  </button>
+
+                  {Array.from({ length: totalPages }).map((_, i) => {
+                    const pageNumber = i + 1;
+                    if (
+                      pageNumber === 1 ||
+                      pageNumber === totalPages ||
+                      (pageNumber >= currentPage - 1 && pageNumber <= currentPage + 1)
+                    ) {
+                      return (
+                        <button
+                          key={pageNumber}
+                          onClick={() => setCurrentPage(pageNumber)}
+                          className={`w-[34px] h-[34px] flex items-center justify-center rounded-full text-[13px] font-bold transition-all ${currentPage === pageNumber
+                            ? "bg-[#6366F1] text-white shadow-[0_4px_10px_rgba(99,102,241,0.3)] border border-transparent"
+                            : "bg-white text-[#374151] border border-gray-200 hover:bg-gray-50 hover:border-gray-300"
+                            }`}
+                        >
+                          {pageNumber}
+                        </button>
+                      );
+                    }
+
+                    if (pageNumber === currentPage - 2 || pageNumber === currentPage + 2) {
+                      return <span key={pageNumber} className="text-gray-400 font-bold px-1">...</span>;
+                    }
+
+                    return null;
+                  })}
+
+                  <button
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages || studentAttendance.length === 0}
+                    className="px-4 py-1.5 rounded-full border border-gray-200 text-[#374151] text-[13px] font-semibold hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-white h-[34px] flex items-center justify-center"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}

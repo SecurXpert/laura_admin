@@ -8,6 +8,13 @@ import {
 } from "lucide-react";
 import { FiStar, FiMessageSquare, FiChevronDown, FiThumbsUp, FiChevronRight } from "react-icons/fi";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 /* ================= API ================= */
 const REVIEWS_API = "/admin/trainer-reviews";
@@ -77,9 +84,19 @@ const Reviews: React.FC = () => {
 
     try {
       const res = await api.get("/admin/courses");
-      setCoursesList(res.data || []);
+      const data = res.data;
+      if (Array.isArray(data)) {
+        setCoursesList(data);
+      } else if (data && Array.isArray(data.courses)) {
+        setCoursesList(data.courses);
+      } else if (data && Array.isArray(data.data)) {
+        setCoursesList(data.data);
+      } else {
+        setCoursesList([]);
+      }
     } catch (err) {
       console.error("Failed to fetch courses", err);
+      setCoursesList([]);
     }
 
     try {
@@ -100,9 +117,10 @@ const Reviews: React.FC = () => {
       console.log("API Response:", response.data);
 
       const itemsList = response.data.items || [];
+      const sortedItems = [...itemsList].sort((a, b) => b.id - a.id);
 
-      setReviews(itemsList);
-      setFilteredReviews(itemsList);
+      setReviews(sortedItems);
+      setFilteredReviews(sortedItems);
 
       const computedTotal = response.data.total !== undefined ? response.data.total : itemsList.length;
       setTotal(computedTotal);
@@ -258,8 +276,8 @@ const Reviews: React.FC = () => {
 
       {/* HEADER SECTION */}
       <div>
-        <h1 className="text-3xl font-extrabold text-[#111827] tracking-tight">Student Reviews</h1>
-        <p className="text-gray-500 text-sm mt-1">Review analytics dashboard with sentiment analysis</p>
+        <h1 className="text-2xl sm:text-3xl font-bold text-[#1a1744] tracking-tight">Student Reviews</h1>
+        <p className="text-md sm:text-md text-[#4B5563] mt-1 font-medium">Review analytics dashboard with sentiment analysis</p>
       </div>
 
       {/* TOP SUMMARY STATS GRID - 2 CARDS IN A 4-COLUMN LAYOUT */}
@@ -269,9 +287,9 @@ const Reviews: React.FC = () => {
         <div className="bg-white rounded-[20px] p-5 shadow-sm flex flex-col justify-between relative overflow-hidden min-h-[160px] border border-gray-100/50">
           <div className="flex justify-between items-start">
             <div>
-              <span className="text-[13px] font-medium text-gray-500">Avg Rating</span>
+              <span className="text-[16px] font-medium text-gray-500">Avg Rating</span>
               <h2 className="text-[28px] font-bold text-gray-900 leading-tight mt-1">{avgRating.toFixed(1)}</h2>
-              <span className="text-[12px] font-medium text-[#10B981] mt-1 block">Out of 5.0</span>
+              {/* <span className="text-[14px] font-medium text-[#10B981] mt-1 block">Out of 5.0</span> */}
             </div>
             <div className="w-12 h-12 rounded-[20px] bg-[#FF8A00] shadow-[0_4px_10px_rgba(255,138,0,0.3)] flex items-center justify-center text-white">
               <FiStar className="w-6 h-6" strokeWidth={1.5} />
@@ -303,9 +321,9 @@ const Reviews: React.FC = () => {
         <div className="bg-white rounded-[20px] p-5 shadow-sm flex flex-col justify-between relative overflow-hidden min-h-[160px] border border-gray-100/50">
           <div className="flex justify-between items-start">
             <div>
-              <span className="text-[13px] font-medium text-gray-500">Total Reviews</span>
+              <span className="text-[16px] font-medium text-gray-500">Total Reviews</span>
               <h2 className="text-[28px] font-bold text-gray-900 leading-tight mt-1">{total}</h2>
-              <span className="text-[12px] font-medium text-[#10B981] mt-1 block">+{reviewsThisWeek} this week</span>
+              {/* <span className="text-[14px] font-medium text-[#10B981] mt-1 block">+{reviewsThisWeek} this week</span> */}
             </div>
             <div className="w-12 h-12 rounded-[20px] bg-[#8B5CF6] shadow-[0_4px_10px_rgba(139,92,246,0.3)] flex items-center justify-center text-white">
               <FiMessageSquare className="w-6 h-6" strokeWidth={1.5} />
@@ -377,47 +395,47 @@ const Reviews: React.FC = () => {
 
             {/* Courses selector */}
             <div className="relative min-w-[160px]">
-              <select
-                value={courseFilter}
-                onChange={(e) => setCourseFilter(e.target.value)}
-                className="w-full appearance-none border border-[#F1F5F9] rounded-[16px] pl-4 pr-10 py-3 text-[13px] font-semibold text-gray-700 focus:outline-none focus:border-[#8B5CF6] focus:ring-1 focus:ring-[#8B5CF6] bg-[#F8FAFC] cursor-pointer"
-              >
-                <option value="">All Courses</option>
-                {uniqueCourseIds.map(id => (
-                  <option key={id} value={String(id)}>{getCourseTitle(id)}</option>
-                ))}
-              </select>
-              <FiChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-[#94A3B8] pointer-events-none w-4 h-4" />
+              <Select value={courseFilter || "all"} onValueChange={(val) => setCourseFilter(val === "all" ? "" : val)}>
+                <SelectTrigger className="w-full border border-[#F1F5F9] rounded-[16px] pl-4 h-[46px] text-[13px] font-semibold text-gray-700 focus:outline-none focus:border-[#8B5CF6] focus:ring-1 focus:ring-[#8B5CF6] bg-[#F8FAFC] cursor-pointer shadow-none">
+                  <SelectValue placeholder="All Courses" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Courses</SelectItem>
+                  {uniqueCourseIds.map(id => (
+                    <SelectItem key={id} value={String(id)}>{getCourseTitle(id)}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Instructor selector */}
             <div className="relative min-w-[160px]">
-              <select
-                value={instructorFilter}
-                onChange={(e) => setInstructorFilter(e.target.value)}
-                className="w-full appearance-none border border-[#F1F5F9] rounded-[16px] pl-4 pr-10 py-3 text-[13px] font-semibold text-gray-700 focus:outline-none focus:border-[#8B5CF6] focus:ring-1 focus:ring-[#8B5CF6] bg-[#F8FAFC] cursor-pointer"
-              >
-                <option value="">All Instructor</option>
-                {uniqueTrainerIds.map(id => (
-                  <option key={id} value={String(id)}>{getInstructorName(id)}</option>
-                ))}
-              </select>
-              <FiChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-[#94A3B8] pointer-events-none w-4 h-4" />
+              <Select value={instructorFilter || "all"} onValueChange={(val) => setInstructorFilter(val === "all" ? "" : val)}>
+                <SelectTrigger className="w-full border border-[#F1F5F9] rounded-[16px] pl-4 h-[46px] text-[13px] font-semibold text-gray-700 focus:outline-none focus:border-[#8B5CF6] focus:ring-1 focus:ring-[#8B5CF6] bg-[#F8FAFC] cursor-pointer shadow-none">
+                  <SelectValue placeholder="All Instructor" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Instructor</SelectItem>
+                  {uniqueTrainerIds.map(id => (
+                    <SelectItem key={id} value={String(id)}>{getInstructorName(id)}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Stars selector */}
             <div className="relative min-w-[140px]">
-              <select
-                value={starFilter}
-                onChange={(e) => setStarFilter(e.target.value)}
-                className="w-full appearance-none border border-[#F1F5F9] rounded-[16px] pl-4 pr-10 py-3 text-[13px] font-semibold text-gray-700 focus:outline-none focus:border-[#8B5CF6] focus:ring-1 focus:ring-[#8B5CF6] bg-[#F8FAFC] cursor-pointer"
-              >
-                <option value="">All Stars</option>
-                {[5, 4, 3, 2, 1].map(stars => (
-                  <option key={stars} value={String(stars)}>{stars} Stars</option>
-                ))}
-              </select>
-              <FiChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-[#94A3B8] pointer-events-none w-4 h-4" />
+              <Select value={starFilter || "all"} onValueChange={(val) => setStarFilter(val === "all" ? "" : val)}>
+                <SelectTrigger className="w-full border border-[#F1F5F9] rounded-[16px] pl-4 h-[46px] text-[13px] font-semibold text-gray-700 focus:outline-none focus:border-[#8B5CF6] focus:ring-1 focus:ring-[#8B5CF6] bg-[#F8FAFC] cursor-pointer shadow-none">
+                  <SelectValue placeholder="All Stars" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Stars</SelectItem>
+                  {[5, 4, 3, 2, 1].map(stars => (
+                    <SelectItem key={stars} value={String(stars)}>{stars} Stars</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
           </div>
@@ -481,15 +499,15 @@ const Reviews: React.FC = () => {
                       {/* Student Column */}
                       <td className="py-4 pl-6 pr-4">
                         <div className="flex items-center gap-3">
-                          <div className={`w-[34px] h-[34px] rounded-full bg-[#8B5CF6] flex items-center justify-center text-white text-[13px] font-semibold shadow-sm`}>
+                          <div className={`w-[34px] h-[34px] rounded-full bg-[#8B5CF6] flex items-center justify-center text-white text-[16px] font-semibold shadow-sm`}>
                             {getStudentName(review.student_id).split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'ST'}
                           </div>
                           <div className="min-w-0">
-                            <span className="font-semibold text-gray-900 text-[14px] block truncate">
+                            <span className="font-semibold text-gray-900 text-[16px] block truncate">
                               {getStudentName(review.student_id)}
                             </span>
                             {review.visible_admin_only && (
-                              <span className="inline-flex items-center gap-0.5 text-[9px] font-bold text-rose-500 bg-rose-50 px-1.5 py-0.2 rounded border border-rose-100 mt-0.5">
+                              <span className="inline-flex items-center gap-0.5 text-[16px] font-bold text-rose-500 bg-rose-50 px-1.5 py-0.2 rounded border border-rose-100 mt-0.5">
                                 <ShieldAlert className="w-2.5 h-2.5" />
                                 <span>Admin Only</span>
                               </span>
@@ -500,14 +518,14 @@ const Reviews: React.FC = () => {
 
                       {/* Course Column */}
                       <td className="py-4 px-4">
-                        <span className="font-semibold text-gray-900 text-[14px] block">
+                        <span className="font-semibold text-gray-900 text-[16px] block">
                           {getCourseTitle(review.course_id)}
                         </span>
                       </td>
 
                       {/* Instructor Column */}
                       <td className="py-4 px-4">
-                        <span className="text-gray-500 font-medium text-[14px] block">
+                        <span className="text-gray-500 font-medium text-[16px] block">
                           {getInstructorName(review.trainer_id)}
                         </span>
                       </td>
@@ -529,14 +547,14 @@ const Reviews: React.FC = () => {
 
                       {/* Comment Column */}
                       <td className="py-4 px-4 max-w-[220px]">
-                        <p className="text-gray-600 text-[13px] line-clamp-2" title={review.comment}>
+                        <p className="text-gray-600 text-[16px] line-clamp-2" title={review.comment}>
                           {review.comment || "—"}
                         </p>
                       </td>
 
                       {/* Sentiment Column */}
                       <td className="py-4 px-4">
-                        <span className={`px-3 py-1 rounded-full text-[13px] font-medium inline-block
+                        <span className={`px-3 py-1 rounded-full text-[16px] font-medium inline-block
                           ${sentiment === "Positive"
                             ? "bg-[#D1FAE5] text-[#059669]"
                             : sentiment === "Neutral"

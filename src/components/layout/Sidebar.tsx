@@ -3,22 +3,38 @@ import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
   Users,
+  UserCheck,
   Layers,
   BookOpen,
   GraduationCap,
   CheckSquare,
+  FileQuestion,
   Calendar,
   UserPlus,
-  FileText,
+  Briefcase,
+  ClipboardList,
   Shield,
   User,
-  Trophy,
+  Puzzle,
+  ScrollText,
+  Terminal,
+  Brain,
+  Code,
   Star,
   BarChart,
+  Medal,
+  FileText,
+  Award,
+  UserCircle,
   LogOut,
   X,
+  Video,
+  Film,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { MdKeyboardDoubleArrowRight, MdKeyboardDoubleArrowLeft } from "react-icons/md";
+import { PiCertificateFill } from "react-icons/pi";
 
 import { Button } from "@/components/ui/button";
 import logo from "@/Assets/lauratek.png";
@@ -47,18 +63,26 @@ const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
   const menuItems = [
     { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
     { icon: Users, label: "Users", path: "/Allusers" },
+    { icon: UserCheck, label: "Guest Users", path: "/registered-users" },
     { icon: Layers, label: "Categories", path: "/categories" },
-    
-   {
+
+    {
       icon: GraduationCap,
       label: "Instructors",
       path: "/instructors",
     },
     { icon: BookOpen, label: "Courses", path: "/courses" },
+    { icon: Video, label: "Live Classes", path: "/live-classes" },
+    { icon: Film, label: "Recorded Videos", path: "/recorded-videos" },
     {
       icon: CheckSquare,
       label: "Instructor Quizzes",
       path: "/quizzes",
+    },
+    {
+      icon: FileQuestion,
+      label: "Admin Quizzes",
+      path: "/admin-quizzes",
     },
     {
       icon: Calendar,
@@ -71,12 +95,12 @@ const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
       path: "/ADMINENROLLMENTS",
     },
     {
-      icon: FileText,
+      icon: Briefcase,
       label: "Assign Course → Instructor",
       path: "/assign-course",
     },
     {
-      icon: FileText,
+      icon: ClipboardList,
       label: "Assign Course → Student",
       path: "/assign-course-student",
     },
@@ -87,18 +111,44 @@ const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
     },
     { icon: User, label: "students", path: "/Students" },
     {
-      icon: Trophy,
+      icon: Puzzle,
       label: "Guest Quizzes",
       path: "/GuestQUizzes",
+    },
+    {
+      icon: ScrollText,
+      label: "Guest Exams",
+      path: "/guest-exams",
+    },
+    {
+      icon: Terminal,
+      label: "Guest Compiler Questions",
+      path: "/guest-compiler-questions",
+    },
+    {
+      icon: Brain,
+      label: "Student Exams",
+      path: "/student-exams",
+    },
+    {
+      icon: Code,
+      label: "Student Compiler Questions",
+      path: "/student-compiler-questions",
     },
     { icon: Star, label: "Student Reviews", path: "/reviews" },
     {
       icon: BarChart,
-      label: "Performace Review",
+      label: "Performance Review",
       path: "/PerformanceReview",
     },
-    { icon: User, label: "Guests", path: "/Guest" },
-    { icon: User, label: "Profile", path: "/profile" },
+    { icon: Medal, label: "Guest Result", path: "/Guest" },
+
+    { icon: PiCertificateFill, label: "Certificates", path: "/certificates" },
+    { icon: FileText, label: "Resumes", path: "/resumes" },
+    { icon: Award, label: "Student Results", path: "/results" },
+
+    { icon: UserCircle, label: "Profile", path: "/profile" },
+
     { icon: LogOut, label: "Logout", path: "#logout" },
   ];
 
@@ -202,7 +252,7 @@ const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
 
         {/* Navigation List perfectly aligned with crisp outline icons */}
         <div className="flex-1 overflow-y-auto scrollbar-hide mt-1">
-          <nav className="space-y-0.5 py-1">
+          <nav className="flex flex-col space-y-0.5 py-1">
             {menuItems.map((item) => {
               const Icon = item.icon;
               const isLogout = item.path === "#logout";
@@ -214,8 +264,8 @@ const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
                     onClick={handleSignOut}
                     title={isCollapsed ? item.label : undefined}
                     className={cn(
-                      "flex items-center gap-3.5 px-4 py-2.5 mx-3 my-0.5 text-[16px] transition-all duration-200 text-[#64748B] hover:bg-gray-50/80 hover:text-gray-900 font-medium rounded-xl text-left",
-                      isCollapsed && "md:justify-center md:mx-1.5 md:px-0"
+                      "flex items-center gap-3.5 px-4 py-2.5 mx-3 my-0.5 text-[16px] transition-all duration-200 text-[#64748B] hover:bg-gray-50/80 hover:text-gray-900 font-medium rounded-xl text-left w-auto",
+                      isCollapsed ? "md:justify-center md:mx-1.5 md:px-0" : ""
                     )}
                   >
                     <Icon className="w-[18px] h-[18px] flex-shrink-0 stroke-[1.75] text-gray-400" />

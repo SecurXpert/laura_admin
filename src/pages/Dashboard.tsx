@@ -3,7 +3,7 @@ import api from "@/lib/api"; import { useNavigate } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, AreaChart, Area } from "recharts";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FaGraduationCap } from "react-icons/fa";
-import { FiUsers, FiBook } from "react-icons/fi";
+import { FiUsers, FiBookOpen } from "react-icons/fi";
 import {
   Users,
   BookOpen,
@@ -90,9 +90,19 @@ const Dashboard = () => {
   const fetchCourses = async () => {
     try {
       const res = await api.get("/admin/courses");
-      setCourses(res.data);
+      const data = res.data;
+      if (Array.isArray(data)) {
+        setCourses(data);
+      } else if (data && Array.isArray(data.courses)) {
+        setCourses(data.courses);
+      } else if (data && Array.isArray(data.data)) {
+        setCourses(data.data);
+      } else {
+        setCourses([]);
+      }
     } catch {
       console.error('Failed to fetch courses');
+      setCourses([]);
     }
   };
 
@@ -236,15 +246,7 @@ const Dashboard = () => {
       setEnrollmentData(chartData);
     } catch (err) {
       console.error('Failed to fetch enrollment count data:', err);
-      // Fallback sample data if API fails or returns no entries
-      setEnrollmentData([
-        { month: 'Jan', students: 400 },
-        { month: 'Feb', students: 300 },
-        { month: 'Mar', students: 580 },
-        { month: 'Apr', students: 810 },
-        { month: 'May', students: 700 },
-        { month: 'Jun', students: 910 },
-      ]);
+      setEnrollmentData([]);
     }
   };
 
@@ -501,10 +503,10 @@ const Dashboard = () => {
     <div className="w-full max-w-7xl mx-auto flex flex-col gap-4 sm:gap-6 pb-12">
       {/* Welcome Header */}
       <div className="flex flex-col">
-        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 tracking-tight">
+        <h1 className="text-2xl sm:text-3xl font-bold text-[#1a1744] tracking-tight">
           Welcome back, Admin
         </h1>
-        <p className="text-xs sm:text-sm text-gray-600 mt-1">
+        <p className="text-md sm:text-md text-[#4B5563] mt-1 font-medium">
           Here's what's happening with your platform today.
         </p>
       </div>
@@ -575,10 +577,10 @@ const Dashboard = () => {
                   Last 6 months
                 </p>
               </div>
-              <div className="flex items-center gap-1 text-[#10B981] text-xs sm:text-sm font-semibold whitespace-nowrap">
+              {/* <div className="flex items-center gap-1 text-[#10B981] text-xs sm:text-sm font-semibold whitespace-nowrap">
                 <span>↑</span>
                 <span>+18.2%</span>
-              </div>
+              </div> */}
             </div>
 
             {(() => {
@@ -591,24 +593,21 @@ const Dashboard = () => {
                 monthlyTotals[item.month] += item.students;
               });
 
-              // Fallback default points if state has no aggregation entries yet
+              // Return early if no data
               if (Object.keys(monthlyTotals).length === 0) {
-                monthlyTotals = {
-                  Jan: 400,
-                  Feb: 300,
-                  Mar: 580,
-                  Apr: 810,
-                  May: 700,
-                  Jun: 910,
-                };
+                return (
+                  <div className="w-full h-full flex flex-col items-center justify-center text-gray-500 mt-8">
+                    <p>No enrollment data available</p>
+                  </div>
+                );
               }
 
               const months = Object.keys(monthlyTotals);
               const values = Object.values(monthlyTotals) as number[];
 
-              // Calculate dynamic max scale (minimum scale of 10 for small student counts)
+              // Calculate dynamic max scale (minimum scale of 12 for multiples of 3 ticks)
               const maxVal = Math.max(...values, 0);
-              const maxScale = maxVal > 10 ? Math.ceil(maxVal / 5) * 5 : 10;
+              const maxScale = Math.max(Math.ceil(maxVal / 12) * 12, 12);
 
               // Map points to custom SVG grid coordinates
               // Chart area starts at x=55, ends at x=505 (width = 450)
@@ -684,9 +683,9 @@ const Dashboard = () => {
 
                       {/* Y-Axis Labels */}
                       <text x="45" y="24" textAnchor="end" className="text-[12px] sm:text-[13px] fill-gray-500 font-semibold font-sans">{maxScale}</text>
-                      <text x="45" y="64" textAnchor="end" className="text-[12px] sm:text-[13px] fill-gray-500 font-semibold font-sans">{Math.round(maxScale * 0.75)}</text>
-                      <text x="45" y="104" textAnchor="end" className="text-[12px] sm:text-[13px] fill-gray-500 font-semibold font-sans">{Math.round(maxScale * 0.5)}</text>
-                      <text x="45" y="144" textAnchor="end" className="text-[12px] sm:text-[13px] fill-gray-500 font-semibold font-sans">{Math.round(maxScale * 0.25)}</text>
+                      <text x="45" y="64" textAnchor="end" className="text-[12px] sm:text-[13px] fill-gray-500 font-semibold font-sans">{maxScale * 0.75}</text>
+                      <text x="45" y="104" textAnchor="end" className="text-[12px] sm:text-[13px] fill-gray-500 font-semibold font-sans">{maxScale * 0.5}</text>
+                      <text x="45" y="144" textAnchor="end" className="text-[12px] sm:text-[13px] fill-gray-500 font-semibold font-sans">{maxScale * 0.25}</text>
                       <text x="45" y="184" textAnchor="end" className="text-[12px] sm:text-[13px] fill-gray-500 font-semibold font-sans">0</text>
 
                       {/* X-Axis Labels */}
@@ -923,7 +922,7 @@ const Dashboard = () => {
                 onClick={() => navigate('/dashboard/courses')}
                 className="h-[80px] sm:h-[90px] rounded-xl sm:rounded-[18px] bg-gradient-to-r from-[#3B82F6] to-[#06B6D4] flex flex-col items-center justify-center cursor-pointer transition-all duration-200 hover:opacity-95 active:scale-[0.99] shadow-sm select-none p-2 text-center"
               >
-                <FiBook className="text-white text-lg sm:text-xl mb-1" />
+                <FiBookOpen className="text-white text-lg sm:text-xl mb-1" />
                 <span className="text-white text-xs sm:text-sm font-medium tracking-wide">
                   Create Course
                 </span>

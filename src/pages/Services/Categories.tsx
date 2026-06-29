@@ -26,6 +26,8 @@ const Categories = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [filtered, setFiltered] = useState<Category[]>([]);
   const [search, setSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 6;
   const [deleteCategory, setDeleteCategory] = useState<Category | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -56,23 +58,18 @@ const Categories = () => {
         id: item.id,
         name: item.name,
         description: item.description,
-      }));
+      })).sort((a: Category, b: Category) => b.id - a.id);
 
       setCategories(normalized);
       setFiltered(normalized);
     } catch (error: any) {
-      console.error("Fetch failed from server. Falling back to demonstration preview.");
-      // Fallback sample categories to ensure offline layout review tests behave perfectly
-      const sampleCategories: Category[] = [
-        { id: 101, name: "Web Development & Engineering", description: "Master full-stack coding with React, Node.js, Next.js, and modern Typescript stacks." },
-        { id: 102, name: "Data Science & Machine Learning", description: "Explore deep learning models, PyTorch, Pandas, mathematical statistical regression, and AI agent frameworks." },
-        { id: 103, name: "Cloud Computing & DevOps Architecture", description: "Learn distributed systems scalability, AWS, Docker containers, Kubernetes orchestrations, and CI/CD automation pipelines." },
-        { id: 104, name: "UI/UX User Experience Design Systems", description: "Design fully responsive, high-fidelity user workflows using Figma wireframes, component design tokens, and usability principles." },
-        { id: 105, name: "Cybersecurity & Network Auditing", description: "Understand penetration testing protocols, cryptography methods, firewalls, and secure infrastructure architectures." },
-      ];
-      setCategories(sampleCategories);
-      setCategories(sampleCategories);
-      setFiltered(sampleCategories);
+      toast({
+        title: "Error",
+        description: "Failed to load categories from server",
+        variant: "destructive",
+      });
+      setCategories([]);
+      setFiltered([]);
     } finally {
       setLoading(false);
     }
@@ -94,11 +91,18 @@ const Categories = () => {
     setFiltered(
       categories.filter(
         (c) =>
-          c.name.toLowerCase().includes(q) ||
-          String(c.id).includes(q)
+          c.name.toLowerCase().includes(q)
       )
     );
+    setCurrentPage(1);
   }, [search, categories]);
+
+  /* ================= PAGINATION LOGIC ================= */
+  const totalPages = Math.ceil(filtered.length / itemsPerPage);
+  const displayedCategories = filtered.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   /* ================= DELETE ================= */
   const confirmDelete = async () => {
@@ -142,7 +146,7 @@ const Categories = () => {
           <h1 className="text-xl sm:text-3xl font-bold text-gray-900 tracking-tight truncate">
             Categories
           </h1>
-          <p className="text-gray-500 text-sm sm:text-base mt-1 truncate max-w-[150px] xs:max-w-[200px] sm:max-w-none">
+           <p className="text-md sm:text-md text-[#4B5563] mt-1 font-medium">
             Organize and manage course categories
           </p>
         </div>
@@ -153,7 +157,7 @@ const Categories = () => {
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="text"
-              placeholder="Search Category by name,courseid."
+              placeholder="Search Category by name"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full pl-10 pr-4 py-2 text-xs sm:text-sm rounded-full border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#9F54FC] focus:border-[#9F54FC] placeholder:text-gray-400 transition-all shadow-sm"
@@ -185,14 +189,16 @@ const Categories = () => {
             <Skeleton key={i} className="h-[240px] w-full rounded-2xl" />
           ))
         ) : (
-          filtered.map((cat) => (
+          displayedCategories.map((cat) => (
           <div
             key={cat.id}
-            className="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border hover:shadow-md transition flex flex-col justify-between min-h-[220px] sm:min-h-[240px] h-full w-full min-w-0"
+            className="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border hover:shadow-md transition flex flex-col justify-between min-h-[220px] sm:min-h-[240px] h-full w-full min-w-0 relative overflow-hidden"
           >
+            {/* Decorative right-side glow */}
+            <div className="absolute -top-10 -right-10 w-40 h-40 bg-gradient-to-br from-[#2B7FFF] to-[#AD46FF] opacity-10 blur-[54px] rounded-full pointer-events-none z-0"></div>
 
             {/* Top Content Layout */}
-            <div className="w-full min-w-0 flex-1">
+            <div className="w-full min-w-0 flex-1 relative z-10">
               {/* Title with flexible multiline layout adaptation */}
               <h2
                 title={cat.name}
@@ -201,10 +207,7 @@ const Categories = () => {
                 {cat.name}
               </h2>
 
-              {/* Category ID tag */}
-              <div className="inline-block mt-3 px-4 py-1.5 text-[13px] font-semibold rounded-full bg-[#EFF6FF] text-[#3161EB] border border-[#BFDBFE]">
-                Course Id : {cat.id}
-              </div>
+
 
               <hr className="mt-4 border-gray-100 w-full" />
 
@@ -247,6 +250,56 @@ const Categories = () => {
           </div>
         )))}
       </div>
+
+      {/* PAGINATION CONTROLS */}
+      {totalPages > 0 && !loading && (
+        <div className="flex flex-col sm:flex-row justify-start items-center gap-6 mt-8 pt-6 border-t border-gray-100">
+          <div className="text-sm text-gray-500 font-medium">
+            Showing {Math.min((currentPage - 1) * itemsPerPage + 1, filtered.length)}-{Math.min(currentPage * itemsPerPage, filtered.length)} of {filtered.length}
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="rounded-full px-4 border-gray-200 text-gray-600 hover:bg-gray-50"
+            >
+              Previous
+            </Button>
+            
+            <div className="flex items-center gap-1">
+              {Array.from({ length: totalPages }).map((_, idx) => {
+                const page = idx + 1;
+                const isActive = page === currentPage;
+                return (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    className={`w-9 h-9 flex items-center justify-center rounded-full text-sm font-semibold transition-colors ${
+                      isActive 
+                        ? 'bg-[#615FFF] text-white shadow-md' 
+                        : 'text-gray-600 hover:bg-gray-100'
+                    }`}
+                  >
+                    {page}
+                  </button>
+                );
+              })}
+            </div>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="rounded-full px-4 border-gray-200 text-gray-600 hover:bg-gray-50"
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* DELETE DIALOG OVERLAY */}
       <Dialog

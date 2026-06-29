@@ -66,7 +66,7 @@ const EnrollmentAdminView = () => {
   const filteredData = useMemo(() => {
     const value = search.toLowerCase();
 
-    return data.filter((item) => {
+    const filtered = data.filter((item) => {
       const name = item.name?.toLowerCase() || "";
       const email = item.email?.toLowerCase() || "";
       const mobile = item.mobile_number || "";
@@ -85,6 +85,8 @@ const EnrollmentAdminView = () => {
         course.includes(value)
       );
     });
+    
+    return filtered.sort((a, b) => b.id - a.id);
   }, [data, search]);
 
   const totalPages = Math.ceil(filteredData.length / pageSize);
@@ -153,10 +155,10 @@ const EnrollmentAdminView = () => {
       {/* HEADER & SEARCH */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 w-full">
         <div>
-          <h1 className="text-2xl font-bold text-[#1F2937] tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-bold text-[#1a1744] tracking-tight">
             Student Enrollments
           </h1>
-          <p className="text-sm text-slate-500 mt-1">
+          <p className="text-md sm:text-md text-[#4B5563] mt-1 font-medium">
             Lead + enrollment intelligence system
           </p>
         </div>

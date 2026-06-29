@@ -1,12 +1,16 @@
 import React, { useEffect, useState } from "react";
-import api from "@/lib/api";import { FiEdit, FiTrash2 } from "react-icons/fi";
+import api from "@/lib/api"; import { FiEdit, FiTrash2 } from "react-icons/fi";
 import { FiCalendar } from "react-icons/fi";
 import { FiChevronDown } from "react-icons/fi";
 import { useRef } from "react";
-import { Skeleton } from "@/components/ui/skeleton";export default function ReviewsCardUI() {
+import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "@/components/ui/use-toast";
+
+export default function ReviewsCardUI() {
   const [courses, setCourses] = useState<any[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<number | "">("");
   const [reviews, setReviews] = useState<any[]>([]);
+  const [instructors, setInstructors] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -23,9 +27,13 @@ import { Skeleton } from "@/components/ui/skeleton";export default function Rev
     localStorage.getItem("access_token") ||
     localStorage.getItem("token");
 
-  // ✅ Fetch Courses
+  // ✅ Fetch Courses and Instructors
   useEffect(() => {
     if (!token) return;
+
+    api.get("/admin/instructors")
+      .then((res) => setInstructors(res.data || []))
+      .catch((err) => console.error("Failed to fetch instructors", err));
 
     api
       .get("/admin/assigned-courses-instructor")
@@ -35,9 +43,29 @@ import { Skeleton } from "@/components/ui/skeleton";export default function Rev
           name: item.course_name ?? item.name ?? "Unnamed",
         }));
         setCourses(mapped);
+
+        if (mapped.length > 0) {
+          fetchAllReviews(mapped);
+        }
       })
       .catch((err) => console.error("Failed to fetch courses", err));
   }, [token]);
+
+  const fetchAllReviews = async (courseList: any[]) => {
+    setLoading(true);
+    try {
+      const allReviews = await Promise.all(
+        courseList.map(c => api.get(`/reviews/by-course?course_id=${c.id}`).then(res => res.data || []).catch(() => []))
+      );
+      const flattened = allReviews.flat();
+      const sorted = flattened.sort((a: any, b: any) => b.id - a.id);
+      setReviews(sorted);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSelectCourse = (value: number | "") => {
     setSelectedCourse(value);
@@ -45,7 +73,7 @@ import { Skeleton } from "@/components/ui/skeleton";export default function Rev
 
     // AUTO LOAD REVIEWS
     if (!value) {
-      setReviews([]);
+      fetchAllReviews(courses);
       return;
     }
 
@@ -54,7 +82,8 @@ import { Skeleton } from "@/components/ui/skeleton";export default function Rev
     api
       .get(`/reviews/by-course?course_id=${value}`)
       .then((res) => {
-        setReviews(res.data || []);
+        const sorted = [...(res.data || [])].sort((a: any, b: any) => b.id - a.id);
+        setReviews(sorted);
         setCurrentPage(1);
       })
       .catch((err) => console.error("Failed to fetch reviews", err))
@@ -73,9 +102,25 @@ import { Skeleton } from "@/components/ui/skeleton";export default function Rev
       );
 
       setReviews((prev) => prev.filter((r) => r.id !== id));
+      toast({
+        title: "Deleted",
+        description: "Deleted successfully",
+        className: "bg-red-500 text-white",
+        duration: 2000,
+      });
     } catch {
-      alert("Delete failed");
+      toast({
+        title: "Error",
+        description: "Delete failed",
+        variant: "destructive",
+      });
     }
+  };
+
+  const getInstructorName = (id: number | string) => {
+    if (!id) return "Unknown";
+    const found = instructors.find((i: any) => i.id === Number(id));
+    return found ? found.name : `Instructor ID: ${id}`;
   };
 
   // ✅ START EDIT
@@ -104,13 +149,24 @@ import { Skeleton } from "@/components/ui/skeleton";export default function Rev
 
       setEditingId(null);
       setEditText("");
+
+      toast({
+        title: "Updated",
+        description: "Review updated successfully",
+        className: "bg-green-500 text-white",
+        duration: 2000,
+      });
     } catch {
-      alert("Update failed");
+      toast({
+        title: "Error",
+        description: "Update failed",
+        variant: "destructive",
+      });
     }
   };
 
   return (
-    <div className="w-full space-y-6 pb-8">
+    <div className="w-full space-y-6 pb-8 relative">
       {/* HEADER */}
       <div
         className="bg-white mb-6 w-full"
@@ -124,16 +180,16 @@ import { Skeleton } from "@/components/ui/skeleton";export default function Rev
         <div className="p-4 sm:p-6 md:p-8">
 
           {/* TITLE */}
-          <h2 className="text-lg sm:text-xl md:text-[22px] font-semibold text-gray-800 mb-1">
+          <h2 className="ttext-2xl sm:text-3xl font-bold text-[#1a1744] tracking-tight">
             Performance Review
           </h2>
 
-          <p className="text-gray-500 text-sm mb-6">
+          <p className="text-md sm:text-md text-[#4B5563] mt-1 font-medium">
             Evaluate student performance and provide feedback
           </p>
 
           {/* FORM */}
-          <div className="flex flex-col md:flex-row md:items-end gap-4 md:gap-8">
+          <div className="flex flex-col md:flex-row md:items-end gap-4 md:gap-8 mt-6">
 
             {/* LEFT SIDE */}
             <div className="flex flex-col w-full">
@@ -184,7 +240,7 @@ import { Skeleton } from "@/components/ui/skeleton";export default function Rev
       </div>
       {/* CARDS */}
 
-      <h3 className="font-semibold mb-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+      {/* <h3 className="font-semibold mb-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
         <span className="text-base sm:text-lg">
           Selected Course {selectedCourse || "-"}
         </span>
@@ -192,7 +248,7 @@ import { Skeleton } from "@/components/ui/skeleton";export default function Rev
         <span className="text-gray-400 text-sm sm:text-md">
           ({reviews.length} total reviews)
         </span>
-      </h3>
+      </h3> */}
 
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mt-4 w-full">
@@ -222,13 +278,9 @@ import { Skeleton } from "@/components/ui/skeleton";export default function Rev
                     </p>
 
                     <p className="text-base sm:text-lg font-semibold text-gray-800 break-words">
-                      {row.student_name || "Ramesh"} (STU ID: {row.student_id})
+                      {row.student_name || "Unknown"} (STU ID: {row.student_id})
                     </p>
                   </div>
-
-                  <span className="bg-[#E6F8ED] text-[#1E854A] px-3 py-1 text-xs sm:text-sm font-semibold rounded-full border border-green-200 whitespace-nowrap">
-                    Id: {row.id}
-                  </span>
                 </div>
 
                 {/* DATE */}
@@ -245,30 +297,12 @@ import { Skeleton } from "@/components/ui/skeleton";export default function Rev
                     borderBottom: "1.36px solid #F3F4F6",
                   }}
                 >
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-                    <div>
-                      <p className="text-gray-500 text-sm">Course ID</p>
-                      <p className="font-semibold text-base sm:text-lg break-words">
-                        {row.course_id}
-                      </p>
-                    </div>
-
-                    <div>
-                      <p className="text-gray-500 text-sm">
-                        Instructor ID
-                      </p>
-                      <p className="font-semibold text-base sm:text-lg break-words">
-                        {row.instructor_id}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div>
+                  <div className="mb-3">
                     <p className="text-gray-500 text-sm">
                       Instructor Name
                     </p>
                     <p className="font-semibold text-base sm:text-lg break-words">
-                      {row.instructor_name || "Rama"}
+                      {row.instructor_name || getInstructorName(row.instructor_id)}
                     </p>
                   </div>
                 </div>
@@ -379,6 +413,7 @@ import { Skeleton } from "@/components/ui/skeleton";export default function Rev
               </div>
             </div>
           )}
+
         </>
       )}
     </div>

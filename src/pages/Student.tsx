@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from "@/lib/api";import { FiSearch, FiMoreVertical, FiEye, FiEdit2, FiTrash2, FiClock, FiCheckCircle } from 'react-icons/fi';
+import api from "@/lib/api"; import { FiSearch, FiMoreVertical, FiEye, FiEdit2, FiTrash2, FiClock, FiCheckCircle } from 'react-icons/fi';
 import { Skeleton } from "@/components/ui/skeleton";
-import { Pencil, Trash2, UserPlus, User, Mail, Lock, Users, UserCheck, TrendingUp, BookOpen } from "lucide-react";
+import { Pencil, Trash2, UserPlus, User, Mail, Lock, Users, UserCheck, TrendingUp, BookOpen, Award, Zap, Calendar, Trophy } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 
 interface Student {
@@ -58,7 +58,8 @@ const StudentList = () => {
   });
 
   const TOKEN_STORAGE_KEY = 'access_token';
-  const getToken = () => localStorage.getItem(TOKEN_STORAGE_KEY);  const axiosConfig = () => ({
+  const getToken = () => localStorage.getItem(TOKEN_STORAGE_KEY);
+  const axiosConfig = () => ({
     headers: {
       Accept: 'application/json',
       Authorization: `Bearer ${getToken()}`,
@@ -78,7 +79,8 @@ const StudentList = () => {
       setLoading(true);
       setError(null);
       const res = await api.get<Student[]>("/student/students/list", axiosConfig());
-      setStudents(res.data || []);
+      const sortedData = [...(res.data || [])].sort((a, b) => b.id - a.id);
+      setStudents(sortedData);
     } catch (err: any) {
       setError('Failed to load students.');
     } finally {
@@ -256,10 +258,10 @@ const StudentList = () => {
 
           {/* TEXT */}
           <div>
-            <h2 className="text-2xl font-bold text-[#1F2937]">
+            <h2 className="text-2xl sm:text-3xl font-bold text-[#1a1744] tracking-tight">
               Student Records
             </h2>
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-md sm:text-md text-[#4B5563] mt-1 font-medium">
               View and manage student profile and performance
             </p>
           </div>
@@ -303,9 +305,9 @@ const StudentList = () => {
           <p className="text-gray-500 text-[15px] font-medium mt-1 relative z-10">
             Total Students
           </p>
-          <p className="text-sm font-medium text-blue-600 mt-3 relative z-10 flex items-center gap-1">
+          {/* <p className="text-sm font-medium text-blue-600 mt-3 relative z-10 flex items-center gap-1">
             <TrendingUp size={16} /> +12.5% from last month
-          </p>
+          </p> */}
         </div>
 
         {/* Active Students */}
@@ -322,9 +324,9 @@ const StudentList = () => {
           <p className="text-gray-500 text-[15px] font-medium mt-1 relative z-10">
             Active Students
           </p>
-          <p className="text-sm font-medium text-emerald-600 mt-3 relative z-10 flex items-center gap-1">
+          {/* <p className="text-sm font-medium text-emerald-600 mt-3 relative z-10 flex items-center gap-1">
             <TrendingUp size={16} /> +75.7% of total
-          </p>
+          </p> */}
         </div>
       </div>      {createModalOpen && (
         <div className="bg-white rounded-2xl shadow-sm p-6 mb-6 w-full">
@@ -496,6 +498,14 @@ const StudentList = () => {
                   {/* Actions */}
                   <td className="px-6 py-5 text-center align-middle">
                     <div className="flex gap-2 justify-center items-center">
+                      <button
+                        onClick={() => navigate(`/dashboard/students/streak/${s.id}`, { state: { student: s } })}
+                        className="flex items-center gap-1.5 bg-[#10B981] hover:bg-[#059669] text-white px-4 py-2 rounded-full text-xs font-semibold transition-all duration-200 shadow-sm"
+                      >
+                        <FiEye className="w-3.5 h-3.5" />
+                        View
+                      </button>
+
                       <button
                         onClick={() => navigate(`/dashboard/students/edit/${s.id}`)}
                         className="flex items-center gap-1.5 bg-[#3B82F6] hover:bg-[#2563EB] text-white px-4 py-2 rounded-full text-xs font-semibold transition-all duration-200 shadow-sm"

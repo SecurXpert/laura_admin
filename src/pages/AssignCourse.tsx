@@ -98,7 +98,7 @@ const AssignCourse = () => {
       }
       return acc;
     }, {} as Record<number, { instructor_id: number; instructor_name: string; courses: { id: number; name: string }[] }>)
-  );
+  ).sort((a: any, b: any) => b.instructor_id - a.instructor_id);
 
   /* ================= UI ================= */
 
@@ -120,10 +120,10 @@ const AssignCourse = () => {
 
   {/* LEFT SIDE (Title + Subtitle) */}
   <div>
-    <h2 className="text-xl sm:text-2xl font-semibold text-[#1F2937]">
+    <h2 className="text-2xl sm:text-3xl font-bold text-[#1a1744] tracking-tight">
       Assign Instructor
     </h2>
-    <p className="text-sm text-gray-500 mt-1">
+    <p className="text-md sm:text-md text-[#4B5563] mt-1 font-medium">
       Manage course and instructor assignments
     </p>
   </div>

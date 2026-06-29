@@ -5,7 +5,8 @@ import { toast } from "@/components/ui/use-toast";
 import { FiMail } from "react-icons/fi";
 import { FiLock } from "react-icons/fi";
 import { FiUser } from "react-icons/fi";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff } from "lucide-react";
+import api from "@/lib/api";
 
 interface SubAdminPayload {
   name: string;
@@ -23,6 +24,7 @@ const CreateSubAdmin: React.FC = () => {
   const token = localStorage.getItem(TOKEN_KEY);
 
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const [formData, setFormData] = useState<SubAdminPayload>({
     name: "",
@@ -270,7 +272,7 @@ const CreateSubAdmin: React.FC = () => {
               />
 
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
@@ -285,7 +287,7 @@ const CreateSubAdmin: React.FC = () => {
                   border border-[#E5E7EB]
                   bg-[#FCFCFD]
                   pl-12
-                  pr-4
+                  pr-12
                   text-[15px]
                   outline-none
                   focus:ring-2
@@ -293,6 +295,17 @@ const CreateSubAdmin: React.FC = () => {
                   focus:border-[#8B5CF6]
                 "
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+              >
+                {showPassword ? (
+                  <EyeOff className="w-5 h-5" />
+                ) : (
+                  <Eye className="w-5 h-5" />
+                )}
+              </button>
             </div>
           </div>
 

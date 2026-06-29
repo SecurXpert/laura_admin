@@ -40,9 +40,10 @@
 
 
 import axios from "axios";
+import { API_BASE_URL } from "@/services/api/api";
 
 const api = axios.create({
-  baseURL: "https://lauratek.in:8000",
+  baseURL: API_BASE_URL,
 });
 
 // Request Interceptor

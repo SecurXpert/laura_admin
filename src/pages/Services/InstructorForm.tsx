@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import api from "../../lib/api";
-import { ArrowLeft, Upload } from "lucide-react";
+import { ArrowLeft, Upload, Eye, EyeOff } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,6 +29,7 @@ const InstructorForm = () => {
 
   const [loading, setLoading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -47,7 +48,7 @@ const InstructorForm = () => {
       case 404:
         return "Instructor not found";
       case 409:
-        return "Instructor already exists";
+        return "Email already exists";
       case 500:
         return "Server error";
       default:
@@ -120,10 +121,24 @@ const InstructorForm = () => {
         return false;
       }
 
-      if (!formData.password.trim() || formData.password.length < 8) {
+      const pwd = formData.password.trim();
+      if (pwd.length < 8 || pwd.length > 30) {
         toast({
           title: "Validation Error",
-          description: "Password must be at least 8 characters long",
+          description: "Password must be between 8 and 30 characters.",
+          variant: "destructive",
+        });
+        return false;
+      }
+      
+      const hasCapital = /[A-Z]/.test(pwd);
+      const hasInteger = /[0-9]/.test(pwd);
+      const hasSpecial = /[!@#$%^&*(),.?":{}|<>\-_+=\/\\\[\]~`]/.test(pwd);
+      
+      if (!hasCapital || !hasInteger || !hasSpecial) {
+        toast({
+          title: "Validation Error",
+          description: "Password must contain at least one uppercase letter, one number, and one special character.",
           variant: "destructive",
         });
         return false;
@@ -131,10 +146,10 @@ const InstructorForm = () => {
     }
 
     /* BIO VALIDATION */
-    if (formData.bio.length > 100) {
+    if (formData.bio.length > 200) {
       toast({
         title: "Validation Error",
-        description: "Bio maximum 100 characters allowed",
+        description: "Bio maximum 200 characters allowed",
         variant: "destructive",
       });
       return false;
@@ -202,7 +217,7 @@ const InstructorForm = () => {
   };
 
   return (
-    <div className="space-y-6 w-full max-w-4xl mx-auto overflow-x-hidden box-border">
+    <div className="space-y-6 w-full overflow-x-hidden box-border">
       {/* HEADER */}
       <div className="flex items-start gap-3 mb-6 sm:mb-8 w-full box-border">
         <button
@@ -213,10 +228,10 @@ const InstructorForm = () => {
         </button>
 
         <div className="min-w-0 flex-1">
-          <h1 className="text-2xl sm:text-[28px] font-bold text-[#111827] leading-tight break-words">
+          <h1 className="text-2xl sm:text-2xl font-bold text-[#111827] leading-tight break-words">
             {isEdit ? "Edit Instructor" : "Add New Instructor"}
           </h1>
-          <p className="text-xs sm:text-sm text-[#6B7280] mt-1 break-words">
+          <p className="text-md text-[#6B7280] mt-1 break-words">
             {isEdit ? "Update instructor information details" : "Fill in the details to add a new instructor"}
           </p>
         </div>
@@ -247,7 +262,7 @@ const InstructorForm = () => {
           {/* FULL NAME FIELD */}
           <div className="w-full box-border min-w-0">
             <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">
-              Full Name
+              Full Name <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -264,7 +279,7 @@ const InstructorForm = () => {
           {!isEdit && (
             <div className="w-full box-border min-w-0">
               <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">
-                Email Address
+                Email Address <span className="text-red-500">*</span>
               </label>
               <input
                 type="email"
@@ -282,30 +297,44 @@ const InstructorForm = () => {
           {!isEdit && (
             <div className="w-full box-border min-w-0">
               <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">
-                Password
+                Password <span className="text-red-500">*</span>
               </label>
-              <input
-                type="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                placeholder="Enter password"
-                minLength={8}
-                className="w-full h-11 px-4 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-purple-500/20 text-sm text-gray-800 placeholder:text-gray-400 transition-all box-border"
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  placeholder="Enter password"
+                  minLength={8}
+                  maxLength={30}
+                  className="w-full h-11 px-4 pr-10 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-purple-500/20 text-sm text-gray-800 placeholder:text-gray-400 transition-all box-border"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700"
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-5 w-5" />
+                  ) : (
+                    <Eye className="h-5 w-5" />
+                  )}
+                </button>
+              </div>
             </div>
           )}
 
           {/* BIO FIELD */}
           <div className="w-full box-border min-w-0">
             <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">
-              Bio
+              Bio <span className="text-gray-400 font-normal ml-1">(Optional)</span>
             </label>
             <textarea
               name="bio"
               value={formData.bio}
               onChange={handleChange}
-              maxLength={100}
+              maxLength={200}
               placeholder="Brief description about the instructor"
               rows={4}
               className="w-full px-4 py-3 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-purple-500/20 text-sm text-gray-800 placeholder:text-gray-400 resize-none transition-all box-border"
@@ -315,7 +344,7 @@ const InstructorForm = () => {
           {/* PROFILE PICTURE FIELD */}
           <div className="w-full box-border min-w-0">
             <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">
-              Profile Picture
+              Profile Picture <span className="text-gray-400 font-normal ml-1">(Optional)</span>
             </label>
 
             <div className="border-2 border-dashed border-gray-200 hover:border-purple-500/50 rounded-2xl min-h-[160px] h-auto flex flex-col items-center justify-center bg-[#fcfcfd] transition-all p-4 w-full box-border">
@@ -323,7 +352,20 @@ const InstructorForm = () => {
                 type="file"
                 name="profile_picture"
                 accept="image/*"
-                onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                onChange={(e) => {
+                  const file = e.target.files?.[0] || null;
+                  if (file && file.size > 5 * 1024 * 1024) {
+                    toast({
+                      title: "File Too Large",
+                      description: "Profile picture must be less than 5MB.",
+                      variant: "destructive",
+                    });
+                    e.target.value = "";
+                    setSelectedFile(null);
+                    return;
+                  }
+                  setSelectedFile(file);
+                }}
                 className="hidden"
                 id="profile-upload"
               />

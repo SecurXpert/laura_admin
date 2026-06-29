@@ -11,6 +11,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Pencil,
   Trash2,
   BookOpen,
@@ -147,51 +154,20 @@ const Courses = () => {
     setLoading(true);
     try {
       const res = await api.get(COURSE_API);
-      setCourses(res.data);
+      const data = res.data;
+      let coursesArray: Course[] = [];
+      if (Array.isArray(data)) {
+        coursesArray = data;
+      } else if (data && Array.isArray(data.courses)) {
+        coursesArray = data.courses;
+      } else if (data && Array.isArray(data.data)) {
+        coursesArray = data.data;
+      }
+
+      const sortedCourses = [...coursesArray].sort((a, b) => b.id - a.id);
+      setCourses(sortedCourses);
     } catch {
-      console.error("Failed to fetch live courses. Loading mock representation exactly matching user specification.");
-      // Fallback preview replicating exact user screenshot structure for flawless verification
-      setCourses([
-        {
-          id: 1243,
-          title: "Advanced React & TypeScript",
-          description: "Master modern React patterns with TypeScript and build scalable applications",
-          duration: "30 min",
-          level: "Easy",
-          language: "selenium java",
-          category_id: 101,
-          image: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=600&auto=format&fit=crop&q=60",
-          status: "Active",
-          schedule: "Jan 25-Jun 25",
-          instructor_id: 1,
-        },
-        {
-          id: 1244,
-          title: "Advanced React & TypeScript",
-          description: "Master modern React patterns with TypeScript and build scalable applications",
-          duration: "30 min",
-          level: "Easy",
-          language: "selenium java",
-          category_id: 101,
-          image: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=600&auto=format&fit=crop&q=60",
-          status: "Active",
-          schedule: "Jan 25-Jun 25",
-          instructor_id: 1,
-        },
-        {
-          id: 1245,
-          title: "Advanced React & TypeScript",
-          description: "Master modern React patterns with TypeScript and build scalable applications",
-          duration: "30 min",
-          level: "Easy",
-          language: "selenium java",
-          category_id: 101,
-          image: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=600&auto=format&fit=crop&q=60",
-          status: "Active",
-          schedule: "Jan 25-Jun 25",
-          instructor_id: 1,
-        },
-      ]);
+      console.error("Failed to fetch live courses.");
     } finally {
       setLoading(false);
     }
@@ -210,10 +186,21 @@ const Courses = () => {
     return id === 101 ? "Web Development" : `Category #${id}`;
   };
 
-  const getInstructorName = (id: number) => {
+  const getInstructorName = (course: any) => {
+    if (typeof course === 'number' || typeof course === 'string') {
+      const id = Number(course);
+      const found = instructors.find((i) => i.id === id);
+      if (found) return found.name;
+      return id === 1 ? "Arjun kumar" : id ? `Instructor #${id}` : "Not Assigned";
+    }
+    if (!course) return "Not Assigned";
+    if (course.instructor_name) return course.instructor_name;
+    if (course.instructorName) return course.instructorName;
+    if (course.instructor?.name) return course.instructor.name;
+    const id = Number(course.instructor_id || course.instructorId);
     const found = instructors.find((i) => i.id === id);
     if (found) return found.name;
-    return id === 1 ? "Arjun kumar" : `Instructor #${id}`;
+    return id === 1 ? "Arjun kumar" : id ? `Instructor #${id}` : "Not Assigned";
   };
 
   const confirmDelete = async () => {
@@ -228,10 +215,11 @@ const Courses = () => {
         className: "bg-red-500 text-white",
         duration: 2000,
       });
-    } catch {
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || error.response?.data?.error || "This course cannot be deleted because it is assigned to an instructor.";
       toast({
         title: "Error",
-        description: "Failed to delete course",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -254,7 +242,6 @@ const Courses = () => {
   /* ================= SEARCH ================= */
   const filteredCourses = courses.filter((c) => {
     const matchesSearch =
-      c.id.toString().includes(search) ||
       c.title.toLowerCase().includes(search.toLowerCase());
 
     const matchesCourse =
@@ -283,9 +270,14 @@ const Courses = () => {
 
       {/* HEADER ROW */}
       <div className="flex items-center justify-between gap-4 mb-6 w-full">
-        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">
-          Courses
-        </h1>
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-[#1a1744] tracking-tight">
+            Courses Management
+          </h1>
+          <p className="text-md sm:text-md text-[#4B5563] mt-1 font-medium">
+            Manage and monitor your courses
+          </p>
+        </div>
 
         <Button
           onClick={() => navigate("../courses/add")}
@@ -337,7 +329,7 @@ const Courses = () => {
         <div className="relative w-full mb-3 sm:mb-4">
           <input
             type="text"
-            placeholder="Search courses by title, ID..."
+            placeholder="Search courses by title..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full h-10 sm:h-11 bg-[#F9FAFB] rounded-xl pl-10 sm:pl-11 pr-4 text-xs sm:text-sm text-gray-700 placeholder:text-gray-400 outline-none border border-gray-200/60 focus:border-[#5D3EFC] transition-all shadow-sm"
@@ -348,46 +340,46 @@ const Courses = () => {
         <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center justify-between gap-3 w-full">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3 flex-1 w-full sm:w-auto">
             <div className="relative w-full min-w-0">
-              <select
-                value={courseFilter}
-                onChange={(e) => setCourseFilter(e.target.value)}
-                className="appearance-none w-full h-9 sm:h-10 bg-[#F9FAFB] hover:bg-gray-50 border border-gray-200/60 rounded-xl pl-3 pr-8 text-xs font-medium text-gray-700 outline-none cursor-pointer transition-all shadow-sm truncate"
-              >
-                <option value="">All Courses</option>
-                {uniqueCourses.map((c) => (
-                  <option key={c.id} value={c.title}>
-                    {c.title}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+              <Select value={courseFilter || "all"} onValueChange={(val) => setCourseFilter(val === "all" ? "" : val)}>
+                <SelectTrigger className="w-full h-9 sm:h-10 bg-[#F9FAFB] hover:bg-gray-50 border border-gray-200/60 rounded-xl text-xs font-medium text-gray-700 outline-none transition-all shadow-sm truncate">
+                  <SelectValue placeholder="All Courses" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Courses</SelectItem>
+                  {uniqueCourses.map((c) => (
+                    <SelectItem key={c.id} value={c.title}>
+                      {c.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="relative w-full min-w-0">
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="appearance-none w-full h-9 sm:h-10 bg-[#F9FAFB] hover:bg-gray-50 border border-gray-200/60 rounded-xl pl-3 pr-8 text-xs font-medium text-gray-700 outline-none cursor-pointer transition-all shadow-sm truncate"
-              >
-                <option value="">All Status</option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-              </select>
-              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+              <Select value={statusFilter || "all"} onValueChange={(val) => setStatusFilter(val === "all" ? "" : val)}>
+                <SelectTrigger className="w-full h-9 sm:h-10 bg-[#F9FAFB] hover:bg-gray-50 border border-gray-200/60 rounded-xl text-xs font-medium text-gray-700 outline-none transition-all shadow-sm truncate">
+                  <SelectValue placeholder="All Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="relative w-full min-w-0">
-              <select
-                value={levelFilter}
-                onChange={(e) => setLevelFilter(e.target.value)}
-                className="appearance-none w-full h-9 sm:h-10 bg-[#F9FAFB] hover:bg-gray-50 border border-gray-200/60 rounded-xl pl-3 pr-8 text-xs font-medium text-gray-700 outline-none cursor-pointer transition-all shadow-sm truncate"
-              >
-                <option value="">All Levels</option>
-                <option value="Beginner">Beginner</option>
-                <option value="Intermediate">Intermediate</option>
-                <option value="Advanced">Advanced</option>
-              </select>
-              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+              <Select value={levelFilter || "all"} onValueChange={(val) => setLevelFilter(val === "all" ? "" : val)}>
+                <SelectTrigger className="w-full h-9 sm:h-10 bg-[#F9FAFB] hover:bg-gray-50 border border-gray-200/60 rounded-xl text-xs font-medium text-gray-700 outline-none transition-all shadow-sm truncate">
+                  <SelectValue placeholder="All Levels" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Levels</SelectItem>
+                  <SelectItem value="Beginner">Beginner</SelectItem>
+                  <SelectItem value="Intermediate">Intermediate</SelectItem>
+                  <SelectItem value="Advanced">Advanced</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -405,8 +397,8 @@ const Courses = () => {
         </div>
       </div>
 
-      {/* COURSES CARD DECK REPLICATING PROVIDED ASSET EXACTLY */}
-      <div className="bg-[#F8FAFC] p-4 sm:p-6 rounded-2xl border border-gray-100/80 w-full">
+      {/* COURSES CARD DECK */}
+      <div className="w-full">
 
         {(!loading && filteredCourses.length === 0) && (
           <div className="text-center py-12 text-gray-400 text-xs sm:text-sm font-medium w-full">
@@ -432,7 +424,7 @@ const Courses = () => {
               return (
                 <div
                   key={c.id}
-                  className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col hover:shadow-md transition-all duration-200 min-w-0 w-full"
+                  className="rounded-2xl overflow-hidden flex flex-col transition-all duration-200 min-w-0 w-full bg-white border-2 border-gray-200 hover:border-gray-300 hover:shadow-sm"
                 >
                   {/* IMAGE COVER WITH FLOATING WHITE STATUS PILL MATCHING SCREENSHOT */}
                   <div className="relative w-full h-40 bg-gray-100 flex-shrink-0">
@@ -466,13 +458,13 @@ const Courses = () => {
                     </div>
 
                     {/* 2-COLUMN LABELED ICON GRID PRECISELY REPLICATING SCREENSHOT */}
-                    <div className="grid grid-cols-2 gap-x-3 gap-y-4 mt-4 pt-4 border-t border-gray-50 w-full min-w-0">
+                    <div className="grid grid-cols-2 gap-x-3 gap-y-4 mt-4 pt-4 w-full min-w-0" style={{ borderTop: "1.4px solid #F3F4F6" }}>
 
                       {/* SCHEDULE */}
                       <div className="flex flex-col min-w-0">
                         <div className="flex items-center gap-1.5 text-gray-500 mb-0.5">
                           <Calendar className="w-4 h-4 flex-shrink-0 stroke-[1.75]" />
-                          <span className="text-[13px] sm:text-[14px] font-medium tracking-tight">Schedule</span>
+                          <span className="text-[13px] sm:text-[14px] font-medium tracking-tight">Start date</span>
                         </div>
                         <p className="text-[14px] sm:text-[15px] font-bold text-gray-900 break-words">
                           {renderSchedule(c.schedule)}
@@ -486,20 +478,10 @@ const Courses = () => {
                           <span className="text-[13px] sm:text-[14px] font-medium tracking-tight">Instructor Name</span>
                         </div>
                         <p className="text-[14px] sm:text-[15px] font-bold text-gray-900 break-words">
-                          {getInstructorName(c.instructor_id)}
+                          {getInstructorName(c)}
                         </p>
                       </div>
 
-                      {/* COURSE ID */}
-                      <div className="flex flex-col min-w-0">
-                        <div className="flex items-center gap-1.5 text-gray-500 mb-0.5">
-                          <BarChart2 className="w-4 h-4 flex-shrink-0 stroke-[1.75]" />
-                          <span className="text-[13px] sm:text-[14px] font-medium tracking-tight">Course ID</span>
-                        </div>
-                        <p className="text-[14px] sm:text-[15px] font-bold text-gray-900 break-words">
-                          {c.id}
-                        </p>
-                      </div>
 
                       {/* LEVEL */}
                       <div className="flex flex-col min-w-0">
@@ -535,7 +517,7 @@ const Courses = () => {
                       </div>
 
                       {/* CATEGORY */}
-                      <div className="col-span-2 flex flex-col min-w-0 mt-0.5">
+                      <div className="flex flex-col min-w-0 mt-0.5">
                         <div className="flex items-center gap-1.5 text-gray-500 mb-0.5">
                           <Layers className="w-4 h-4 flex-shrink-0 stroke-[1.75]" />
                           <span className="text-[13px] sm:text-[14px] font-medium tracking-tight">Category</span>
@@ -548,9 +530,9 @@ const Courses = () => {
                     </div>
 
                     {/* BOTTOM BUTTON BAR PRECISELY MATCHING SCREENSHOT */}
-                    <div className="flex flex-wrap gap-2.5 sm:gap-3 mt-6 pt-2 w-full mt-auto">
+                    <div className="flex flex-wrap gap-2.5 sm:gap-3 mt-6 pt-4 w-full mt-auto" style={{ borderTop: "1.4px solid #F3F4F6" }}>
                       <button
-                        onClick={() => navigate(`../courses/edit/${c.id}`)}
+                        onClick={() => navigate(`../courses/edit/${c.id}`, { state: { course: c, instructorName: getInstructorName(c), instructorId: (c as any).instructor_id || (c as any).instructorId || (c as any).instructor?.id } })}
                         className="flex-1 flex items-center justify-center gap-1.5 bg-[#6366F1] hover:bg-[#5a5ce6] text-white rounded-xl py-2.5 text-xs font-bold shadow-sm transition-colors active:scale-[0.99]"
                       >
                         <Pencil className="w-3.5 h-3.5 stroke-[2]" />
@@ -559,7 +541,7 @@ const Courses = () => {
 
                       <button
                         onClick={() => setDeleteCourse(c)}
-                        className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-2xl bg-[#FF4747] hover:bg-[#ff3333] text-white text-[13px] sm:text-sm font-medium transition-all shadow-sm active:scale-[0.98] min-w-[120px]"
+                        className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-[#FF4747] hover:bg-[#ff3333] text-white text-[13px] sm:text-sm font-medium transition-all shadow-sm active:scale-[0.98] min-w-[120px]"
                       >
                         <Trash2 className="w-4 h-4 stroke-2" />
                         <span>Delete</span>

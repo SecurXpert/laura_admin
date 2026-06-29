@@ -1,6 +1,13 @@
 import React, { useState } from "react";
-import api from "@/lib/api";import { GuestQuiz } from "./GuestQuizzes";
-import { FiPlus, FiHelpCircle, FiInfo } from "react-icons/fi";
+import api from "@/lib/api"; import { GuestQuiz } from "./GuestQuizzes";
+import { FiPlus, FiHelpCircle, FiInfo, FiArrowLeft } from "react-icons/fi";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 interface AddGuestQuestionModalProps {
   quizzes: GuestQuiz[];
   onClose: () => void;
@@ -20,6 +27,11 @@ const AddGuestQuestionModal: React.FC<AddGuestQuestionModalProps> = ({
 
   const handleAddQuestion = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (questionText.trim().length > 130) {
+      alert("Question text cannot exceed 130 characters");
+      return;
+    }
 
     try {
       await api.post(
@@ -44,28 +56,29 @@ const AddGuestQuestionModal: React.FC<AddGuestQuestionModalProps> = ({
   };
 
   return (
-    <div className="bg-[#F5F7FB] p-4 sm:p-6 rounded-xl mt-4">
+    <div className="w-full pb-8 relative">
       {/* HEADER */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-semibold text-gray-800">Add Question</h1>
-          <p className="text-gray-500 text-xs sm:text-sm">
-            Create a new question for the selected quiz
-          </p>
-        </div>
+      <div className="sticky top-[64px] z-40 bg-[#F8F9FB]/95 backdrop-blur-sm py-4 border-b border-slate-200 mb-6 -mt-4 px-2 rounded-b-lg">
+        <button onClick={onClose} className="text-gray-500 text-sm flex items-center gap-2 mb-4 hover:text-gray-700">
+          <FiArrowLeft /> Back to Guest Quizzes
+        </button>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Add Question</h1>
+            <p className="text-gray-500 text-xs sm:text-sm mt-1">
+              Create a new question for the selected quiz
+            </p>
+          </div>
 
-        <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-          <button onClick={onClose} className="text-gray-500 text-xs sm:text-sm">
-            Cancel
-          </button>
-
-          <button
-            onClick={handleAddQuestion}
-            className="flex items-center gap-2 bg-gradient-to-r from-[#4F46E5] to-[#9333EA] text-white px-5 py-2 rounded-lg shadow-md text-sm sm:text-base font-medium"
-          >
-            <FiPlus className="w-4 h-4" strokeWidth={2.5} />
-            <span>Add Question</span>
-          </button>
+          <div className="flex items-center gap-4 w-full sm:w-auto justify-end">
+            <button
+              onClick={handleAddQuestion}
+              className="flex items-center gap-2 px-6 py-2.5 rounded-lg text-white font-semibold text-sm bg-gradient-to-r from-[#615FFF] to-[#AD46FF] hover:opacity-90 shadow-sm transition-all"
+            >
+              <FiPlus className="w-4 h-4" strokeWidth={2.5} />
+              <span>Save question</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -88,38 +101,50 @@ const AddGuestQuestionModal: React.FC<AddGuestQuestionModalProps> = ({
               {/* QUIZ ID */}
               <div>
                 <label className="text-sm font-medium text-gray-700">
-                  Quiz ID
+                  Quiz ID <span className="text-red-500">*</span>
                 </label>
-                <select
-                  className="w-full mt-1 border bg-gray-50 p-3 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500"
-                  value={quizId}
-                  onChange={(e) => setQuizId(e.target.value)}
-                >
-                  <option value="">Select a quiz</option>
-                  {quizzes.map((quiz) => (
-                    <option key={quiz.id} value={quiz.id.toString()}>
-                      {quiz.id} - {quiz.title}
-                    </option>
-                  ))}
-                </select>
+                <Select value={quizId || undefined} onValueChange={setQuizId}>
+                  <SelectTrigger className="w-full mt-1 border border-gray-200 bg-gray-50 h-[46px] rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer shadow-none">
+                    <SelectValue placeholder="Select a quiz" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {quizzes.map((quiz) => (
+                      <SelectItem key={quiz.id} value={quiz.id.toString()}>
+                        {quiz.id} - {quiz.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* QUESTION TEXT */}
               <div>
-                <label className="text-sm font-medium text-gray-700">
-                  Question
-                </label>
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium text-gray-700">
+                    Question <span className="text-red-500">*</span>
+                  </label>
+                 
+                </div>
                 <textarea
-                  className="w-full mt-1 border bg-gray-50 p-3 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500"
-                  placeholder="Enter your question here..."
+                  className={`w-full mt-1 border bg-gray-50 p-3 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 ${questionText.length >= 130 ? "border-amber-500" : ""}`}
+                  placeholder="Enter your question here ..."
                   value={questionText}
-                  onChange={(e) => setQuestionText(e.target.value)}
+                  onChange={(e) => {
+                    if (e.target.value.length <= 130) {
+                      setQuestionText(e.target.value);
+                    }
+                  }}
+                  maxLength={130}
                   rows={3}
                 />
               </div>
 
               {/* OPTIONS */}
-              <div className="space-y-3">
+              <div>
+                <label className="text-sm font-medium text-gray-700 block mb-2">
+                  Options <span className="text-red-500">*</span>
+                </label>
+                <div className="space-y-3">
                 <div
                   className="flex items-center p-3 rounded-lg border border-blue-200 shadow-sm"
                   style={{
@@ -192,8 +217,13 @@ const AddGuestQuestionModal: React.FC<AddGuestQuestionModalProps> = ({
                   />
                 </div>
               </div>
+            </div>
 
               {/* CORRECT OPTION */}
+              <div>
+                <label className="text-sm font-medium text-gray-700 block mb-2">
+                  Correct Option <span className="text-red-500">*</span>
+                </label>
               <div
                 className="flex items-center p-3 rounded-lg border border-blue-200 shadow-sm"
                 style={{
@@ -207,6 +237,7 @@ const AddGuestQuestionModal: React.FC<AddGuestQuestionModalProps> = ({
                   value={correctOption}
                   onChange={(e) => setCorrectOption(e.target.value)}
                 />
+              </div>
               </div>
             </div>
           </div>

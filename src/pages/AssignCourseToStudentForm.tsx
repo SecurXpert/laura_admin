@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { API_BASE_URL } from "@/services/api/api";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -34,11 +35,20 @@ const AssignCourseToStudentForm = () => {
 
   const fetchCourses = async () => {
     try {
-      const res = await fetch(`https://lauratek.in:8000/admin/courses`, {
+      const res = await fetch(`${API_BASE_URL}/admin/courses`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error();
-      setCourses(await res.json());
+      const data = await res.json();
+      let coursesArray = [];
+      if (Array.isArray(data)) {
+        coursesArray = data;
+      } else if (data && Array.isArray(data.courses)) {
+        coursesArray = data.courses;
+      } else if (data && Array.isArray(data.data)) {
+        coursesArray = data.data;
+      }
+      setCourses(coursesArray);
     } catch {
       toast.error("Failed to fetch courses");
     }
@@ -46,7 +56,7 @@ const AssignCourseToStudentForm = () => {
 
   const fetchStudents = async () => {
     try {
-      const res = await fetch(`https://lauratek.in:8000/student/students/list`, {
+      const res = await fetch(`${API_BASE_URL}/student/students/list`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error();
@@ -83,7 +93,7 @@ const AssignCourseToStudentForm = () => {
 
     setLoading(true);
     try {
-      const res = await fetch(`https://lauratek.in:8000/admin/assign-course-student`, {
+      const res = await fetch(`${API_BASE_URL}/admin/assign-course-student`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -151,10 +161,10 @@ const AssignCourseToStudentForm = () => {
               <SelectTrigger className="h-12 rounded-[16px] border-gray-200 focus:ring-2 focus:ring-[#8b5cf6] text-[#1F2937] font-medium bg-white shadow-sm">
                 <SelectValue placeholder="All Courses" />
               </SelectTrigger>
-              <SelectContent className="rounded-[12px]">
+              <SelectContent className="rounded-[12px] max-h-[300px] overflow-y-auto">
                 {courses.map((course) => (
                   <SelectItem key={course.id} value={String(course.id)}>
-                    {course.id} — {course.title}
+                    {course.title} (ID: {course.id})
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -168,10 +178,10 @@ const AssignCourseToStudentForm = () => {
               <SelectTrigger className="h-12 rounded-[16px] border-gray-200 focus:ring-2 focus:ring-[#8b5cf6] text-[#1F2937] font-medium bg-white shadow-sm">
                 <SelectValue placeholder="All Students" />
               </SelectTrigger>
-              <SelectContent className="rounded-[12px]">
+              <SelectContent className="rounded-[12px] max-h-[300px] overflow-y-auto">
                 {students.map((student) => (
                   <SelectItem key={student.id} value={String(student.id)}>
-                    {student.id} — {student.name}
+                    {student.name} (ID: {student.id})
                   </SelectItem>
                 ))}
               </SelectContent>

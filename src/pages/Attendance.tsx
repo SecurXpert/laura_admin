@@ -11,15 +11,18 @@ import { Eye } from "lucide-react";
 import { User, Calendar, Clock } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import api from "@/lib/api";
+import { toast } from "@/components/ui/use-toast";
 
 
 interface AttendanceRecord {
-  id: number;
+  id?: number;
   student_id: number;
   student_name: string;
-  check_in_time: string;
   course_id: number;
-  check_out_time: string;
+  date: string;
+  status: string;
+  check_in_time: string | null;
+  check_out_time: string | null;
   duration_hours: number;
 }
 
@@ -28,11 +31,21 @@ const Attendance = () => {
   const location = useLocation();
   const [attendanceData, setAttendanceData] = useState<AttendanceRecord[]>([]);
   const [students, setStudents] = useState<{ student_id: number; student_name: string }[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   const [searchTerm, setSearchTerm] = useState("");
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [successToast, setSuccessToast] = useState<string | null>(null);
+  const [courses, setCourses] = useState<any[]>([]);
+  
+  // Default dates: last 30 days to today
+  const [fromDate, setFromDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 30);
+    return d.toISOString().split("T")[0];
+  });
+  const [toDate, setToDate] = useState(() => {
+    return new Date().toISOString().split("T")[0];
+  });
+  const [courseId, setCourseId] = useState("");
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
@@ -41,18 +54,44 @@ const Attendance = () => {
     setCurrentPage(1);
   }, [searchTerm]);
 
+  // Fetch Courses on mount
   useEffect(() => {
-    if (location.state?.flashToast) {
-      setSuccessToast(location.state.flashToast);
-      window.history.replaceState({}, document.title);
-      setTimeout(() => setSuccessToast(null), 3000);
-    }
-  }, [location]);
+    const fetchCourses = async () => {
+      try {
+        const res = await api.get("/admin/courses");
+        const data = res.data;
+        if (Array.isArray(data)) {
+          setCourses(data);
+        } else if (data && Array.isArray(data.courses)) {
+          setCourses(data.courses);
+        } else if (data && Array.isArray(data.data)) {
+          setCourses(data.data);
+        } else {
+          setCourses([]);
+        }
+      } catch (err) {
+        console.error("Failed to fetch courses", err);
+      }
+    };
+    fetchCourses();
+  }, []);
 
   // ================= FETCH =================
   const fetchAttendance = async () => {
+    if (!courseId || !fromDate || !toDate) {
+      toast({ title: "Validation Error", description: "Please select course and date range.", variant: "destructive" });
+      return;
+    }
+    
+    setLoading(true);
     try {
-      const res = await api.get("/attendance/admin/view-attendance");
+      const res = await api.get("/attendance/admin/view-attendance", {
+        params: {
+          course_id: courseId,
+          from_date: fromDate,
+          to_date: toDate
+        }
+      });
 
       let data = res.data;
       if (!Array.isArray(data)) data = data.data || data.items || [];
@@ -65,25 +104,29 @@ const Attendance = () => {
             { student_id: item.student_id, student_name: item.student_name },
           ])
         ).values()
-      );
+      ).sort((a: any, b: any) => b.student_id - a.student_id);
 
       setStudents(uniqueStudents);
     } catch (err) {
       console.error("Error fetching attendance:", err);
+      toast({ title: "Error", description: "Failed to fetch attendance records.", variant: "destructive" });
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchAttendance();
-  }, []);
+    if (courseId) {
+      fetchAttendance();
+    }
+  }, [courseId, fromDate, toDate]);
 
   //  SEARCH FILTER
-  const filteredStudents = students.filter((student) =>
-    student.student_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    student.student_id.toString().includes(searchTerm)
-  );
+  const filteredStudents = students.filter((student) => {
+    const nameMatch = student.student_name ? student.student_name.toLowerCase().includes(searchTerm.toLowerCase()) : false;
+    const idMatch = student.student_id ? student.student_id.toString().includes(searchTerm) : false;
+    return nameMatch || idMatch;
+  });
 
   // ================= DELETE =================
   const handleDelete = async (id: number) => {
@@ -94,39 +137,25 @@ const Attendance = () => {
 
       await fetchAttendance();
 
-      setToastMessage("Delete Successfully");
-      setTimeout(() => setToastMessage(null), 3000);
+      toast({
+        title: "Deleted",
+        description: "Attendance removed successfully",
+        className: "bg-red-500 text-white",
+        duration: 2000,
+      });
 
     } catch (err) {
       console.error("Delete error:", err);
-      alert("Failed to delete attendance");
+      toast({
+        title: "Error",
+        description: "Failed to delete attendance",
+        variant: "destructive",
+      });
     }
   };
 
   return (
     <div className="w-full max-w-7xl mx-auto overflow-x-hidden pb-12 relative">
-
-      {/* LARGE TOAST MESSAGE */}
-      {toastMessage && (
-        <div className="fixed bottom-10 right-10 z-[9999] transition-all duration-300">
-          <div className="bg-red-500 text-white px-8 py-5 rounded-2xl shadow-2xl flex items-center gap-4 text-lg font-bold tracking-wide border-2 border-red-600">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-white" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-            </svg>
-            {toastMessage}
-          </div>
-        </div>
-      )}
-
-      {/* LARGE GREEN SUCCESS TOAST (FROM FORMS) */}
-      {successToast && (
-        <div className="fixed bottom-10 right-10 z-[9999] transition-all duration-300">
-          <div className="bg-green-500 text-white px-8 py-5 rounded-2xl shadow-2xl flex items-center gap-4 text-lg font-bold tracking-wide border-2 border-green-600">
-            <CheckCircle2 className="w-7 h-7 text-white" />
-            {successToast}
-          </div>
-        </div>
-      )}
 
       <div className="space-y-6">
 
@@ -134,10 +163,10 @@ const Attendance = () => {
         <div className="flex flex-wrap items-center justify-between gap-4 w-full">
           {/* LEFT TITLE */}
           <div>
-            <h1 className="text-2xl font-semibold text-[#1F2937]">
+            <h1 className="text-2xl sm:text-3xl font-bold text-[#1a1744] tracking-tight">
               Student Attendance
             </h1>
-            <h3 className="text-sm text-gray-500">Track and manage student attendance records efficiently</h3>
+            <h3 className="text-md sm:text-md text-[#4B5563] mt-1 font-medium">Track and manage student attendance records efficiently</h3>
           </div>
 
           {/* RIGHT SIDE (BUTTON) */}
@@ -158,29 +187,54 @@ const Attendance = () => {
           </div>
         </div>
 
-        {/* SEARCH BAR CONTAINER */}
-        <div className="w-full bg-white border border-gray-200 rounded-2xl shadow-sm px-4 py-3">
-          <div className="relative w-full">
-            {/* Search Icon */}
-            <svg
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              viewBox="0 0 24 24"
-            >
-              <circle cx="11" cy="11" r="8" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
-
+        {/* FILTER BAR CONTAINER */}
+        <div className="w-full bg-white border border-gray-200 rounded-xl shadow-sm p-4 flex flex-col xl:flex-row gap-4">
+          <div className="relative flex-grow">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-[18px] h-[18px]" />
             <input
               placeholder="Search by ID or Name..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 bg-gray-100 border border-gray-200 
-                   rounded-full focus:ring-2 focus:ring-blue-200 
-                   focus:border-blue-500 outline-none"
+              className="w-full pl-10 pr-4 h-11 bg-[#F8FAFC] border border-gray-200 rounded-lg text-[14px] focus:ring-1 focus:ring-[#6366F1] outline-none"
             />
+          </div>
+          
+          <div className="flex flex-col sm:flex-row gap-4 w-full xl:w-auto">
+            <div className="relative w-full sm:w-[150px]">
+              <input
+                type="date"
+                value={fromDate}
+                onChange={(e) => setFromDate(e.target.value)}
+                className="w-full h-11 px-3 bg-[#F8FAFC] border border-gray-200 rounded-lg text-[14px] text-gray-600 focus:ring-1 focus:ring-[#6366F1] outline-none"
+                title="From Date"
+              />
+            </div>
+            <div className="relative w-full sm:w-[150px]">
+              <input
+                type="date"
+                value={toDate}
+                onChange={(e) => setToDate(e.target.value)}
+                className="w-full h-11 px-3 bg-[#F8FAFC] border border-gray-200 rounded-lg text-[14px] text-gray-600 focus:ring-1 focus:ring-[#6366F1] outline-none"
+                title="To Date"
+              />
+            </div>
+            <div className="relative w-full sm:w-[180px]">
+              <select 
+                value={courseId}
+                onChange={(e) => setCourseId(e.target.value)}
+                className="w-full h-11 pl-3 pr-10 bg-[#F8FAFC] border border-gray-200 rounded-lg text-[14px] text-gray-700 outline-none focus:ring-1 focus:ring-[#6366F1] appearance-none cursor-pointer"
+              >
+                <option value="" disabled>Select Course</option>
+                {courses.map(course => (
+                  <option key={course.id} value={course.id.toString()}>
+                    {course.name || course.title || `Course ${course.id}`}
+                  </option>
+                ))}
+              </select>
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -220,7 +274,7 @@ const Attendance = () => {
                         className="font-bold text-[#101828]"
                         style={{
                           fontFamily: "Inter",
-                          fontSize: "30px",
+                          fontSize: "25px",
                           lineHeight: "45.3px",
                           letterSpacing: "-0.74px",
                         }}
@@ -245,7 +299,7 @@ const Attendance = () => {
 
                   {/* RIGHT BUTTON (FILLED) */}
                   <button
-                    onClick={() => navigate(`/dashboard/attendance/details/${student.student_id}`)}
+                    onClick={() => navigate(`/dashboard/attendance/details/${student.student_id}?course_id=${courseId}&from_date=${fromDate}&to_date=${toDate}`)}
                     className="flex items-center justify-center gap-2 
              text-white 
              bg-gradient-to-r from-[#615FFF] to-[#AD46FF]

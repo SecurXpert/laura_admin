@@ -1,7 +1,15 @@
 import React, { useState } from "react";
-import api from "@/lib/api";import { toast } from "@/components/ui/use-toast";
+import api from "@/lib/api";
+import { toast } from "@/components/ui/use-toast";
 import { FiClock, FiUser, FiFileText, FiSettings, FiLink, FiSave, FiArrowLeft } from "react-icons/fi";
 import { GuestQuiz } from "./GuestQuizzes";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 interface CreateGuestQuizModalProps {
   onClose: () => void;
   onSuccess: (quizzes: GuestQuiz[]) => void;
@@ -15,6 +23,33 @@ const CreateGuestQuizModal: React.FC<CreateGuestQuizModalProps> = ({
   const [description, setDescription] = useState("");
   const [duration, setDuration] = useState("");
   const [courseId, setCourseId] = useState("");
+  const [courses, setCourses] = useState<{id: number, title: string}[]>([]);
+
+  React.useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        const token = localStorage.getItem('access_token');
+        const res = await api.get('/admin/courses', {
+          headers: {
+            Authorization: token ? `Bearer ${token}` : '',
+          },
+        });
+        const data = res.data;
+        let coursesArray = [];
+        if (Array.isArray(data)) {
+          coursesArray = data;
+        } else if (data && Array.isArray(data.courses)) {
+          coursesArray = data.courses;
+        } else if (data && Array.isArray(data.data)) {
+          coursesArray = data.data;
+        }
+        setCourses(coursesArray);
+      } catch (error) {
+        console.error("Failed to fetch courses:", error);
+      }
+    };
+    fetchCourses();
+  }, []);
 
   const handleDurationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value.replace(/\D/g, ""); // Remove non-digits
@@ -82,9 +117,9 @@ const CreateGuestQuizModal: React.FC<CreateGuestQuizModalProps> = ({
   };
 
   return (
-    <div className="p-4 sm:p-6 mt-4 w-full max-w-full">
+    <div className="w-full pb-8 relative">
       {/* HEADER */}
-      <div className="mb-6">
+      <div className="sticky top-[64px] z-40 bg-[#F8F9FB]/95 backdrop-blur-sm py-4 border-b border-slate-200 mb-6 -mt-4 px-2 rounded-b-lg">
         <button onClick={onClose} className="text-gray-500 text-sm flex items-center gap-2 mb-4 hover:text-gray-700">
           <FiArrowLeft /> Back to Guest Quizzes
         </button>
@@ -93,19 +128,16 @@ const CreateGuestQuizModal: React.FC<CreateGuestQuizModalProps> = ({
             <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
               Create Guest Quiz
             </h1>
-            <p className="text-gray-500 text-xs sm:text-sm mt-1">
+            <p className="text-gray-500 text-md sm:text-sm mt-1">
               Set up a new quiz that can be shared publicly
             </p>
           </div>
           <div className="flex items-center gap-4 w-full sm:w-auto justify-end">
-            <button onClick={onClose} className="text-gray-500 text-sm font-medium hover:text-gray-700">
-              Cancel
-            </button>
             <button
               onClick={handleSubmit}
               className="flex items-center gap-2 px-6 py-2.5 rounded-lg text-white font-semibold text-sm bg-gradient-to-r from-[#615FFF] to-[#AD46FF] hover:opacity-90 shadow-sm transition-all"
             >
-              <FiSave size={16} /> Create Quiz
+              <FiSave size={16} /> Submit Quiz
             </button>
           </div>
         </div>
@@ -148,7 +180,7 @@ const CreateGuestQuizModal: React.FC<CreateGuestQuizModalProps> = ({
               {/* DESCRIPTION */}
               <div>
                 <label className="text-sm font-medium text-gray-700">
-                  Description
+                  Description <span className="text-red-500">*</span>
                 </label>
                 <textarea
                   className="w-full mt-1 border bg-gray-50 p-3 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500"
@@ -181,7 +213,7 @@ const CreateGuestQuizModal: React.FC<CreateGuestQuizModalProps> = ({
               {/* DURATION */}
               <div>
                 <label className="text-sm font-medium text-gray-700">
-                  Duration (minutes)
+                  Duration (minutes) <span className="text-red-500">*</span>
                 </label>
 
                 <div className="relative mt-1">
@@ -199,23 +231,30 @@ const CreateGuestQuizModal: React.FC<CreateGuestQuizModalProps> = ({
               {/* COURSE ID */}
               <div>
                 <label className="text-sm font-medium text-gray-700">
-                  Course ID
+                  Course ID <span className="text-red-500">*</span>
                 </label>
 
                 <div className="relative mt-1">
-                  <FiUser className="absolute left-3 top-3 text-gray-400 text-lg" />
+                  <FiUser className="absolute left-3 top-3 text-gray-400 text-lg pointer-events-none" />
 
-                  <input
-                    type="text"
-                    className="w-full border bg-gray-50 pl-10 p-3 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500"
-                    placeholder="enter Course Id"
-                    value={courseId}
-                    onChange={handleCourseIdChange}
-                  />
+                  <Select value={courseId || undefined} onValueChange={setCourseId}>
+                    <SelectTrigger className="w-full border border-gray-200 bg-gray-50 pl-10 h-[46px] rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 text-sm cursor-pointer shadow-none">
+                      <SelectValue placeholder="Select a course" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {courses.map((course) => (
+                        <SelectItem key={course.id} value={course.id.toString()}>
+                          {course.title || `Course ID: ${course.id}`}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             </div>
           </div>
+
+
         </div>
 
         {/* RIGHT PREVIEW */}

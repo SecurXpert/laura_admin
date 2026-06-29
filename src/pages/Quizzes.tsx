@@ -4,8 +4,16 @@
 import { useEffect, useState } from "react";
 import { FiBookOpen, FiSearch, FiUser, FiCalendar, FiFilter } from "react-icons/fi";
 import { HiOutlineClock } from "react-icons/hi";
+import { API_BASE_URL as API_BASE } from "@/services/api/api";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BsCheckCircle } from "react-icons/bs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type Quiz = {
   id: number;
@@ -38,7 +46,7 @@ type QuizQuestion = {
   file_url: string | null;
 };
 
-const API_BASE = "https://lauratek.in:8000";
+
 
 const getToken = () =>
   localStorage.getItem("access_token") ||
@@ -91,6 +99,42 @@ export default function Quizzes() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
+  /* ================= COURSES STATE ================= */
+  const [coursesList, setCoursesList] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchCourses = async () => {
+      const token = getToken();
+      if (!token) return;
+      try {
+        const res = await fetch(`${API_BASE}/admin/courses`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data)) {
+            setCoursesList(data);
+          } else if (data && Array.isArray(data.courses)) {
+            setCoursesList(data.courses);
+          } else if (data && Array.isArray(data.data)) {
+            setCoursesList(data.data);
+          } else {
+            setCoursesList([]);
+          }
+        }
+      } catch (e) {
+        console.error("Failed to fetch courses for mapping", e);
+        setCoursesList([]);
+      }
+    };
+    fetchCourses();
+  }, []);
+
+  const getCourseName = (courseId: number) => {
+    const course = coursesList.find(c => c.id === courseId);
+    return course ? (course.title || course.name) : `Course ${courseId}`;
+  };
+
   /* ================= UNIQUE DROPDOWN VALUES ================= */
 
   const uniqueCourses = [
@@ -98,12 +142,12 @@ export default function Quizzes() {
   ];
 
   const uniqueInstructors = [
-    ...new Set(quizzes.map((q) => q.instructor_name)),
-  ];
+    ...new Set(quizzes.map((q) => q.instructor_name ? String(q.instructor_name).trim() : "")),
+  ].filter(Boolean);
 
   /* ================= APPLY FILTERS ================= */
 
-  const applyFilters = () => {
+  useEffect(() => {
     let filtered = [...quizzes];
 
     if (search) {
@@ -112,7 +156,8 @@ export default function Quizzes() {
         (quiz) =>
           quiz.title.toLowerCase().includes(lowerSearch) ||
           (quiz.description && quiz.description.toLowerCase().includes(lowerSearch)) ||
-          quiz.instructor_name.toLowerCase().includes(lowerSearch)
+          (quiz.instructor_name && String(quiz.instructor_name).trim().toLowerCase().includes(lowerSearch)) ||
+          getCourseName(quiz.course_id).toLowerCase().includes(lowerSearch)
       );
     }
 
@@ -124,7 +169,7 @@ export default function Quizzes() {
 
     if (selectedInstructor) {
       filtered = filtered.filter(
-        (quiz) => quiz.instructor_name === selectedInstructor
+        (quiz) => quiz.instructor_name && String(quiz.instructor_name).trim() === selectedInstructor
       );
     }
 
@@ -151,7 +196,7 @@ export default function Quizzes() {
 
     setFilteredQuizzes(filtered);
     setCurrentPage(1);
-  };
+  }, [search, selectedCourse, selectedInstructor, selectedStatus, selectedDate, quizzes, coursesList]);
 
   /* ================= RESET FILTERS ================= */
 
@@ -161,41 +206,10 @@ export default function Quizzes() {
     setSelectedStatus("");
     setSelectedDate("");
     setSearch("");
-    setFilteredQuizzes(quizzes);
-    setCurrentPage(1);
   };
 
-  /* ================= INITIAL TABLE DATA ================= */
-
-  useEffect(() => {
-    setFilteredQuizzes(quizzes);
-    setCurrentPage(1);
-  }, [quizzes]);
-
-  const [coursesList, setCoursesList] = useState<any[]>([]);
-
-  useEffect(() => {
-    const fetchCourses = async () => {
-      const token = getToken();
-      if (!token) return;
-      try {
-        const res = await fetch(`${API_BASE}/admin/courses`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setCoursesList(data);
-        }
-      } catch (e) {
-        console.error("Failed to fetch courses for mapping", e);
-      }
-    };
-    fetchCourses();
-  }, []);
-
-  const getCourseName = (courseId: number) => {
-    const course = coursesList.find(c => c.id === courseId);
-    return course ? course.title : `Course ${courseId}`;
+  const applyFilters = () => {
+    // Left as no-op since the useEffect handles real-time filtering now.
   };
 
   const [quizStatusCount, setQuizStatusCount] = useState<{
@@ -259,7 +273,9 @@ export default function Quizzes() {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data: Quiz[] = await res.json();
       console.log("Quizzes data received:", data);
-      setQuizzes(data);
+      
+      const sortedData = [...data].sort((a, b) => b.id - a.id);
+      setQuizzes(sortedData);
 
 
     } catch (error) {
@@ -287,7 +303,7 @@ export default function Quizzes() {
       setUpdatingId(quizId);
 
       const response = await fetch(
-        `https://lauratek.in:8000/admin/quiz-status/${quizId}?approved=${approved}`,
+        `${API_BASE}/admin/quiz-status/${quizId}?approved=${approved}`,
         {
           method: "PUT",
           headers: {
@@ -442,10 +458,10 @@ export default function Quizzes() {
 
         {/* LEFT */}
         <div className="min-w-0">
-          <h1 className="text-xl sm:text-2xl font-semibold text-gray-800 truncate">
+          <h1 className="text-2xl sm:text-3xl font-bold text-[#1a1744] tracking-tight">
             Instructor Quizzes
           </h1>
-          <p className="text-gray-400 text-xs sm:text-sm mt-1 break-words">
+          <p className="text-md sm:text-md text-[#4B5563] mt-1 font-medium">
             Review, approve, and analyze quizzes created by instructors
           </p>
         </div>
@@ -507,19 +523,19 @@ export default function Quizzes() {
               <div className="flex items-start justify-between gap-3 w-full min-w-0">
                 {/* LEFT */}
                 <div className="flex-1 min-w-0 overflow-hidden">
-                  <p className="text-xs sm:text-sm text-gray-500 font-medium leading-tight truncate">
+                  <p className="text-md sm:text-sm text-gray-500 font-medium leading-tight truncate">
                     Total Quizzes
                   </p>
 
-                  <h2 className="text-3xl sm:text-4xl lg:text-5xl leading-none font-extrabold text-gray-900 mt-2 truncate">
+                  <h2 className="text-2xl sm:text-2xl lg:text-4xl leading-none font-extrabold text-gray-900 mt-2 truncate">
                     {quizStatusLoading
                       ? "..."
                       : quizStatusCount?.total_quizzes ?? quizzes.length}
                   </h2>
 
-                  <p className="text-[#10B981] text-xs font-semibold mt-1.5 truncate">
+                  {/* <p className="text-[#10B981] text-xs font-semibold mt-1.5 truncate">
                     +12 this week
-                  </p>
+                  </p> */}
                 </div>
 
                 <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-[#8B5CF6] flex items-center justify-center shrink-0 shadow-[0_6px_16px_rgba(139,92,246,0.3)]">
@@ -576,20 +592,20 @@ export default function Quizzes() {
               <div className="flex items-start justify-between gap-3 w-full min-w-0">
                 {/* LEFT */}
                 <div className="flex-1 min-w-0 overflow-hidden">
-                  <p className="text-xs sm:text-sm text-gray-500 font-medium leading-tight truncate">
+                  <p className="text-md sm:text-sm text-gray-500 font-medium leading-tight truncate">
                     Pending Approvals
                   </p>
 
-                  <h2 className="text-3xl sm:text-4xl lg:text-5xl leading-none font-extrabold text-gray-900 mt-2 truncate">
+                  <h2 className="text-2xl sm:text-2xl lg:text-4xl leading-none font-extrabold text-gray-900 mt-2 truncate">
                     {quizStatusLoading
                       ? "..."
                       : quizStatusCount?.pending ??
                       quizzes.filter((q) => q.approved === 0).length}
                   </h2>
 
-                  <p className="text-gray-400 text-xs font-medium mt-1.5 truncate">
+                  {/* <p className="text-gray-400 text-xs font-medium mt-1.5 truncate">
                     Requires action
-                  </p>
+                  </p> */}
                 </div>
 
                 <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-[#F97316] flex items-center justify-center shrink-0 shadow-[0_6px_16px_rgba(249,115,22,0.3)]">
@@ -637,20 +653,20 @@ export default function Quizzes() {
               <div className="flex items-start justify-between gap-3 w-full min-w-0">
                 {/* LEFT */}
                 <div className="flex-1 min-w-0 overflow-hidden">
-                  <p className="text-xs sm:text-sm text-gray-500 font-medium leading-tight truncate">
+                  <p className="text-md sm:text-sm text-gray-500 font-medium leading-tight truncate">
                     Approved Today
                   </p>
 
-                  <h2 className="text-3xl sm:text-4xl lg:text-5xl leading-none font-extrabold text-gray-900 mt-2 truncate">
+                  <h2 className="text-2xl sm:text-2xl lg:text-4xl leading-none font-extrabold text-gray-900 mt-2 truncate">
                     {quizStatusLoading
                       ? "..."
                       : quizStatusCount?.approved ??
                       quizzes.filter((q) => q.approved === 1).length}
                   </h2>
 
-                  <p className="text-[#10B981] text-xs font-semibold mt-1.5 truncate">
+                  {/* <p className="text-[#10B981] text-xs font-semibold mt-1.5 truncate">
                     +3 from yesterday
-                  </p>
+                  </p> */}
                 </div>
 
                 <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-[#10B981] flex items-center justify-center shrink-0 shadow-[0_6px_16px_rgba(16,185,129,0.3)]">
@@ -681,59 +697,53 @@ export default function Quizzes() {
 
           {/* COURSES */}
           <div className="relative w-full box-border">
-            <FiBookOpen className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-            <select
-              value={selectedCourse}
-              onChange={(e) => setSelectedCourse(e.target.value)}
-              className="h-[52px] w-full rounded-[16px] border border-[#E5E7EB] bg-gray-50 pl-11 pr-10 text-[15px] text-[#111827] outline-none focus:ring-2 focus:ring-[#8B5CF6] box-border appearance-none transition-all"
-            >
-              <option value="">All Courses</option>
-              {uniqueCourses.map((course) => (
-                <option key={course} value={course}>
-                  Course {course}
-                </option>
-              ))}
-            </select>
-            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-400">
-              <svg className="fill-current h-4 w-4" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" /></svg>
-            </div>
+            <FiBookOpen className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none z-10" />
+            <Select value={selectedCourse || "all"} onValueChange={(val) => setSelectedCourse(val === "all" ? "" : val)}>
+              <SelectTrigger className="h-[52px] w-full rounded-[16px] border border-[#E5E7EB] bg-gray-50 pl-11 text-[15px] text-[#111827] outline-none focus:ring-2 focus:ring-[#8B5CF6] box-border transition-all shadow-none">
+                <SelectValue placeholder="All Courses" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Courses</SelectItem>
+                {uniqueCourses.map((course) => (
+                  <SelectItem key={course} value={String(course)}>
+                    {getCourseName(course as number)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* INSTRUCTORS */}
           <div className="relative w-full box-border">
-            <FiUser className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-            <select
-              value={selectedInstructor}
-              onChange={(e) => setSelectedInstructor(e.target.value)}
-              className="h-[52px] w-full rounded-[16px] border border-[#E5E7EB] bg-gray-50 pl-11 pr-10 text-[15px] text-[#111827] outline-none focus:ring-2 focus:ring-[#8B5CF6] box-border appearance-none transition-all"
-            >
-              <option value="">All Instructor</option>
-              {uniqueInstructors.map((instructor) => (
-                <option key={instructor} value={instructor}>
-                  {instructor}
-                </option>
-              ))}
-            </select>
-            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-400">
-              <svg className="fill-current h-4 w-4" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" /></svg>
-            </div>
+            <FiUser className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none z-10" />
+            <Select value={selectedInstructor || "all"} onValueChange={(val) => setSelectedInstructor(val === "all" ? "" : val)}>
+              <SelectTrigger className="h-[52px] w-full rounded-[16px] border border-[#E5E7EB] bg-gray-50 pl-11 text-[15px] text-[#111827] outline-none focus:ring-2 focus:ring-[#8B5CF6] box-border transition-all shadow-none">
+                <SelectValue placeholder="All Instructor" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Instructor</SelectItem>
+                {uniqueInstructors.map((instructor) => (
+                  <SelectItem key={instructor} value={instructor}>
+                    {instructor}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* STATUS */}
           <div className="relative w-full box-border">
-            <BsCheckCircle className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-            <select
-              value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
-              className="h-[52px] w-full rounded-[16px] border border-[#E5E7EB] bg-gray-50 pl-11 pr-10 text-[15px] text-[#111827] outline-none focus:ring-2 focus:ring-[#8B5CF6] box-border appearance-none transition-all"
-            >
-              <option value="">All Status</option>
-              <option value="approved">Approved</option>
-              <option value="pending">Pending</option>
-            </select>
-            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-400">
-              <svg className="fill-current h-4 w-4" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" /></svg>
-            </div>
+            <BsCheckCircle className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none z-10" />
+            <Select value={selectedStatus || "all"} onValueChange={(val) => setSelectedStatus(val === "all" ? "" : val)}>
+              <SelectTrigger className="h-[52px] w-full rounded-[16px] border border-[#E5E7EB] bg-gray-50 pl-11 text-[15px] text-[#111827] outline-none focus:ring-2 focus:ring-[#8B5CF6] box-border transition-all shadow-none">
+                <SelectValue placeholder="All Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="approved">Approved</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           {/* DATE */}
@@ -842,7 +852,7 @@ export default function Quizzes() {
                       {/* INSTRUCTOR */}
                       <td className="px-6 py-5 align-top">
                         <div className="font-semibold text-[#1F2937] text-[16px]">
-                          {quiz.instructor_name}
+                          {quiz.instructor_name ? String(quiz.instructor_name).trim() : ""}
                         </div>
                       </td>
 

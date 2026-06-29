@@ -83,7 +83,8 @@ const GuestQuizzes = () => {
       );
 
       if (Array.isArray(res.data)) {
-        setQuizzes(res.data);
+        const sortedData = [...res.data].sort((a, b) => b.id - a.id);
+        setQuizzes(sortedData);
 
         // SUCCESS MESSAGE
         setSuccessMessage("Quiz created successfully");
@@ -284,7 +285,7 @@ const GuestQuizzes = () => {
 
   return (
 
-    <div className="w-full max-w-7xl mx-auto overflow-x-hidden pb-12">
+    <div className="w-full max-w-7xl mx-auto pb-12">
       {!isAnyModalOpen ? (
         <>
           {/* HEADER */}
@@ -295,13 +296,13 @@ const GuestQuizzes = () => {
 
             <div>
 
-              <h1 className="text-xl sm:text-2xl font-semibold text-gray-800">
+              <h1 className="text-2xl sm:text-3xl font-bold text-[#1a1744] tracking-tight">
 
                 Guest Quizzes
 
               </h1>
 
-              <p className="text-xs sm:text-sm text-gray-500">
+              <p className="text-md sm:text-md text-[#4B5563] mt-1 font-medium">
 
                 Manage public quizzes accessible without login
 
@@ -431,23 +432,9 @@ const GuestQuizzes = () => {
               </div>
 
               {/* STATUS DROPDOWN */}
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="border bg-gray-50 px-4 py-3 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500"
-              >
-                <option value="all">All Status</option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-              </select>
+             
               {/* RESET BUTTON */}
-              <button
-                onClick={handleResetFilters}
-                className="flex items-center gap-2 px-4 py-3 rounded-lg border bg-gray-50 hover:bg-gray-100 text-gray-600"
-              >
-                <FiRefreshCw className="text-base" />
-                Reset
-              </button>
+              
 
             </div>
           </div>
@@ -479,11 +466,6 @@ const GuestQuizzes = () => {
                             {quiz.description || "No description"}
                           </p>
                         </div>
-
-                        {/* RIGHT SIDE */}
-                        <span className="bg-green-100 text-green-600 text-xs px-3 py-1 rounded-full whitespace-nowrap">
-                          Active
-                        </span>
                       </div>
 
                       {/* STATS */}

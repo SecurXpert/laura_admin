@@ -83,7 +83,8 @@ const SubAdmins: React.FC = () => {
         "/admin/list-of-sbuadmins"
       );
 
-      setSubAdmins(response.data);
+      const sortedData = [...response.data].sort((a, b) => b.id - a.id);
+      setSubAdmins(sortedData);
     } catch (err) {
       console.error("Fetch sub-admins failed:", err);
       setListError("Failed to load sub-admins");
@@ -175,27 +176,18 @@ const SubAdmins: React.FC = () => {
 
           <h2
             className="
-    text-[14px] md:text-[26px]
-    leading-[20px] md:leading-[36px]
-    tracking-[0.2px] md:tracking-[0px]
-    font-bold
-    text-[#101828]
+   text-2xl sm:text-3xl font-bold text-[#1a1744] tracking-tight
   "
-            style={{ fontFamily: "Inter" }}
+            
           >
             Sub-Admin Management
           </h2>
 
           <p
             className="
-    mt-1
-    text-[16px]
-    leading-[22px]
-    tracking-[-0.2px]
-    font-normal
-    text-[#4A5565]
+   text-md sm:text-md text-[#4B5563] mt-1 font-medium
   "
-            style={{ fontFamily: "Inter" }}
+            
           >
             Role based access control system with comprehensive permissions
           </p>
@@ -466,9 +458,7 @@ const SubAdmins: React.FC = () => {
                   </div>
 
                   {/* ACTIVE BADGE */}
-                  <span className="px-2.5 py-1 sm:px-3 sm:py-1 bg-[#dcfce7] text-[#16a34a] text-[11px] sm:text-[12px] font-bold rounded-full shrink-0">
-                    Active
-                  </span>
+                 
                 </div>
 
                 {/* BOTTOM PILL */}
