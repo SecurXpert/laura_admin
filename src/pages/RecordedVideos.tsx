@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, Search, ChevronDown, RefreshCw } from "lucide-react";
+import { Plus, Search, ChevronDown, RefreshCw, Check } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import UploadVideoForm from "@/components/UploadVideoForm";
 import VideoCard, { VideoItem } from "@/components/VideoCard";
@@ -10,6 +10,7 @@ import { API_BASE_URL } from "@/services/api/api";
 export default function RecordedVideos() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingVideo, setEditingVideo] = useState<VideoItem | null>(null);
+  const [isCourseMenuOpen, setIsCourseMenuOpen] = useState(false);
   
   // Filter states
   const [searchQuery, setSearchQuery] = useState("");
@@ -201,10 +202,10 @@ export default function RecordedVideos() {
   };
 
   return (
-    <div className="w-full max-w-[1400px] mx-auto space-y-6 px-4 sm:px-6 lg:px-8 overflow-x-hidden">
+    <div className="w-full max-w-7xl mx-auto space-y-6 overflow-x-hidden scrollbar-hide pb-12">
       {/* Header Section */}
       {!isFormOpen && (
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6 transition-all duration-300">
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6 transition-all duration-300 w-full">
           <div>
             <h1 className="text-[28px] font-bold text-slate-900 tracking-tight">
               Recorded Videos
@@ -231,7 +232,7 @@ export default function RecordedVideos() {
       )}
 
       {/* Main Content Area */}
-      <div className="mt-8 transition-all duration-300 ease-in-out">
+      <div className="mt-6 transition-all duration-300 ease-in-out w-full">
         {isFormOpen ? (
           <UploadVideoForm
             editVideoId={editingVideo?.id}
@@ -262,25 +263,78 @@ export default function RecordedVideos() {
                 <div className="relative w-full sm:w-[180px]">
                   <Input
                     type="date"
+                    max={new Date().toISOString().split('T')[0]}
                     value={dateFilter}
                     onChange={(e) => setDateFilter(e.target.value)}
                     className="bg-[#F8FAFC] border-gray-200 h-11 rounded-lg text-[14px] text-gray-600 focus-visible:ring-1 focus-visible:ring-[#6366F1] w-full"
                   />
                 </div>
-                <div className="relative w-full sm:w-[180px]">
-                  <select 
-                    value={courseFilter}
-                    onChange={(e) => setCourseFilter(e.target.value)}
-                    className="w-full h-11 pl-3 pr-10 bg-[#F8FAFC] border border-gray-200 rounded-lg text-[14px] text-gray-700 outline-none focus:ring-1 focus:ring-[#6366F1] appearance-none cursor-pointer"
+                <div className="relative w-full sm:w-[220px]">
+                  <div
+                    onClick={() => setIsCourseMenuOpen(!isCourseMenuOpen)}
+                    className="w-full h-11 px-3.5 bg-[#F8FAFC] border border-gray-200 rounded-lg text-[14px] text-gray-700 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-all select-none shadow-sm"
                   >
-                    <option value="all">All Courses</option>
-                    {courses.map(course => (
-                      <option key={course.id} value={course.id.toString()}>
-                        {course.name || course.title || `Course ${course.id}`}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
+                    <span className="truncate">
+                      {courseFilter === "all"
+                        ? "All Courses"
+                        : courses.find((c) => c.id.toString() === courseFilter)?.name ||
+                          courses.find((c) => c.id.toString() === courseFilter)?.title ||
+                          `Course ${courseFilter}`}
+                    </span>
+                    <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-200 shrink-0 ml-2 ${isCourseMenuOpen ? "rotate-180" : ""}`} />
+                  </div>
+
+                  {isCourseMenuOpen && (
+                    <>
+                      <div
+                        className="fixed inset-0 z-40"
+                        onClick={() => setIsCourseMenuOpen(false)}
+                      />
+                      <div className="absolute right-0 sm:left-0 top-[calc(100%+6px)] w-full min-w-[260px] max-h-[320px] overflow-y-auto scrollbar-hide bg-white rounded-xl border border-gray-200 shadow-[0_10px_35px_rgba(0,0,0,0.12)] z-50 py-2 animate-fade-in">
+                        <div
+                          onClick={() => {
+                            setCourseFilter("all");
+                            setIsCourseMenuOpen(false);
+                          }}
+                          className={`flex items-center gap-3 px-4 py-2.5 text-[14px] cursor-pointer transition-colors ${
+                            courseFilter === "all"
+                              ? "text-slate-900 font-semibold bg-slate-50"
+                              : "text-slate-700 font-normal hover:bg-slate-50 hover:text-slate-900"
+                          }`}
+                        >
+                          <div className="w-4 h-4 flex items-center justify-center shrink-0">
+                            {courseFilter === "all" && <Check className="w-4 h-4 text-slate-800" />}
+                          </div>
+                          <span className="truncate">All Courses</span>
+                        </div>
+
+                        {courses.map((course) => {
+                          const courseIdStr = course.id.toString();
+                          const isSelected = courseFilter === courseIdStr;
+                          const courseName = course.name || course.title || `Course ${course.id}`;
+                          return (
+                            <div
+                              key={course.id}
+                              onClick={() => {
+                                setCourseFilter(courseIdStr);
+                                setIsCourseMenuOpen(false);
+                              }}
+                              className={`flex items-center gap-3 px-4 py-2.5 text-[14px] cursor-pointer transition-colors ${
+                                isSelected
+                                  ? "text-slate-900 font-semibold bg-slate-50"
+                                  : "text-slate-700 font-normal hover:bg-slate-50 hover:text-slate-900"
+                              }`}
+                            >
+                              <div className="w-4 h-4 flex items-center justify-center shrink-0">
+                                {isSelected && <Check className="w-4 h-4 text-slate-800" />}
+                              </div>
+                              <span className="truncate">{courseName}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             </div>

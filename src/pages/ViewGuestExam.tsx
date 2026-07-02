@@ -217,6 +217,51 @@ const ViewGuestExam = () => {
 
           </div>
         </div>
+
+        {/* ATTACHED QUESTIONS SECTION */}
+        <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-gray-100 mt-6">
+          <h3 className="text-lg font-bold text-[#1a1744] mb-4">
+            Exam Questions
+          </h3>
+          {(() => {
+            let qObj = exam.questions;
+            if (typeof qObj === "string") {
+              try { qObj = JSON.parse(qObj); } catch (e) { qObj = null; }
+            }
+            if (!qObj || typeof qObj !== "object" || Object.keys(qObj).length === 0) {
+              return (
+                <div className="text-center py-6 bg-gray-50 rounded-xl text-gray-500 text-sm">
+                  No questions currently assigned to this exam.
+                </div>
+              );
+            }
+            const list = Object.entries(qObj).map(([k, val]: [string, any], idx) => {
+              if (val && typeof val === "object" && val.question_bank_id !== undefined) {
+                return { id: val.question_bank_id, score: val.score ?? 10, index: idx + 1 };
+              }
+              if (val && typeof val === "object" && val.score !== undefined) {
+                return { id: k, score: val.score, index: idx + 1 };
+              }
+              return { id: k, score: val, index: idx + 1 };
+            });
+            return (
+              <div className="space-y-3">
+                <div className="grid grid-cols-12 gap-4 text-xs font-semibold text-gray-400 uppercase tracking-wider px-3 pb-1 border-b border-gray-100">
+                  <div className="col-span-2">#</div>
+                  <div className="col-span-6">Question Bank ID</div>
+                  <div className="col-span-4 text-right">Points / Score</div>
+                </div>
+                {list.map((item) => (
+                  <div key={item.index} className="grid grid-cols-12 gap-4 items-center bg-gray-50/70 p-3.5 rounded-xl border border-gray-100 text-sm">
+                    <div className="col-span-2 font-bold text-indigo-600">Q{item.index}</div>
+                    <div className="col-span-6 font-medium text-gray-800">Question ID #{item.id}</div>
+                    <div className="col-span-4 text-right font-semibold text-emerald-600">{item.score} pts</div>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
+        </div>
       </div>
     </div>
   );

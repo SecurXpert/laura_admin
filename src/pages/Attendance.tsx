@@ -1,18 +1,13 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { X, CheckCircle2 } from "lucide-react";
-import { Pencil, Trash2, Search } from "lucide-react";
-import { Eye } from "lucide-react";
-
-import { User, Calendar, Clock } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import api from "@/lib/api";
 import { toast } from "@/components/ui/use-toast";
 
+import { AttendanceHeader } from "./AttendanceComponents/AttendanceHeader";
+import { AttendanceFilterBar } from "./AttendanceComponents/AttendanceFilterBar";
+import { AttendanceStudentCard } from "./AttendanceComponents/AttendanceStudentCard";
+import { AttendancePagination } from "./AttendanceComponents/AttendancePagination";
 
 interface AttendanceRecord {
   id?: number;
@@ -28,14 +23,15 @@ interface AttendanceRecord {
 
 const Attendance = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   const [attendanceData, setAttendanceData] = useState<AttendanceRecord[]>([]);
-  const [students, setStudents] = useState<{ student_id: number; student_name: string }[]>([]);
+  const [students, setStudents] = useState<
+    { student_id: number; student_name: string }[]
+  >([]);
   const [loading, setLoading] = useState(false);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [courses, setCourses] = useState<any[]>([]);
-  
+
   // Default dates: last 30 days to today
   const [fromDate, setFromDate] = useState(() => {
     const d = new Date();
@@ -79,18 +75,22 @@ const Attendance = () => {
   // ================= FETCH =================
   const fetchAttendance = async () => {
     if (!courseId || !fromDate || !toDate) {
-      toast({ title: "Validation Error", description: "Please select course and date range.", variant: "destructive" });
+      toast({
+        title: "Validation Error",
+        description: "Please select course and date range.",
+        variant: "destructive",
+      });
       return;
     }
-    
+
     setLoading(true);
     try {
       const res = await api.get("/attendance/admin/view-attendance", {
         params: {
           course_id: courseId,
           from_date: fromDate,
-          to_date: toDate
-        }
+          to_date: toDate,
+        },
       });
 
       let data = res.data;
@@ -109,7 +109,11 @@ const Attendance = () => {
       setStudents(uniqueStudents);
     } catch (err) {
       console.error("Error fetching attendance:", err);
-      toast({ title: "Error", description: "Failed to fetch attendance records.", variant: "destructive" });
+      toast({
+        title: "Error",
+        description: "Failed to fetch attendance records.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -121,10 +125,14 @@ const Attendance = () => {
     }
   }, [courseId, fromDate, toDate]);
 
-  //  SEARCH FILTER
+  // SEARCH FILTER
   const filteredStudents = students.filter((student) => {
-    const nameMatch = student.student_name ? student.student_name.toLowerCase().includes(searchTerm.toLowerCase()) : false;
-    const idMatch = student.student_id ? student.student_id.toString().includes(searchTerm) : false;
+    const nameMatch = student.student_name
+      ? student.student_name.toLowerCase().includes(searchTerm.toLowerCase())
+      : false;
+    const idMatch = student.student_id
+      ? student.student_id.toString().includes(searchTerm)
+      : false;
     return nameMatch || idMatch;
   });
 
@@ -143,7 +151,6 @@ const Attendance = () => {
         className: "bg-red-500 text-white",
         duration: 2000,
       });
-
     } catch (err) {
       console.error("Delete error:", err);
       toast({
@@ -156,87 +163,22 @@ const Attendance = () => {
 
   return (
     <div className="w-full max-w-7xl mx-auto overflow-x-hidden pb-12 relative">
-
       <div className="space-y-6">
+        <AttendanceHeader
+          onAdd={() => navigate("/dashboard/attendance/add")}
+        />
 
-        {/* RESPONSIVE HEADER CONTAINER */}
-        <div className="flex flex-wrap items-center justify-between gap-4 w-full">
-          {/* LEFT TITLE */}
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-[#1a1744] tracking-tight">
-              Student Attendance
-            </h1>
-            <h3 className="text-md sm:text-md text-[#4B5563] mt-1 font-medium">Track and manage student attendance records efficiently</h3>
-          </div>
-
-          {/* RIGHT SIDE (BUTTON) */}
-          <div className="flex items-center gap-3">
-            {/* Add Button */}
-            <button
-              onClick={() => navigate("/dashboard/attendance/add")}
-              className="flex items-center gap-2 px-5 py-2.5 
-               rounded-full border border-transparent
-               bg-gradient-to-r from-[#615FFF] to-[#AD46FF] 
-               text-white 
-               hover:from-[#514EF0] hover:to-[#9333EA]
-               transition shadow-sm"
-            >
-              <span className="text-lg leading-none">+</span>
-              Add Attendance
-            </button>
-          </div>
-        </div>
-
-        {/* FILTER BAR CONTAINER */}
-        <div className="w-full bg-white border border-gray-200 rounded-xl shadow-sm p-4 flex flex-col xl:flex-row gap-4">
-          <div className="relative flex-grow">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-[18px] h-[18px]" />
-            <input
-              placeholder="Search by ID or Name..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 h-11 bg-[#F8FAFC] border border-gray-200 rounded-lg text-[14px] focus:ring-1 focus:ring-[#6366F1] outline-none"
-            />
-          </div>
-          
-          <div className="flex flex-col sm:flex-row gap-4 w-full xl:w-auto">
-            <div className="relative w-full sm:w-[150px]">
-              <input
-                type="date"
-                value={fromDate}
-                onChange={(e) => setFromDate(e.target.value)}
-                className="w-full h-11 px-3 bg-[#F8FAFC] border border-gray-200 rounded-lg text-[14px] text-gray-600 focus:ring-1 focus:ring-[#6366F1] outline-none"
-                title="From Date"
-              />
-            </div>
-            <div className="relative w-full sm:w-[150px]">
-              <input
-                type="date"
-                value={toDate}
-                onChange={(e) => setToDate(e.target.value)}
-                className="w-full h-11 px-3 bg-[#F8FAFC] border border-gray-200 rounded-lg text-[14px] text-gray-600 focus:ring-1 focus:ring-[#6366F1] outline-none"
-                title="To Date"
-              />
-            </div>
-            <div className="relative w-full sm:w-[180px]">
-              <select 
-                value={courseId}
-                onChange={(e) => setCourseId(e.target.value)}
-                className="w-full h-11 pl-3 pr-10 bg-[#F8FAFC] border border-gray-200 rounded-lg text-[14px] text-gray-700 outline-none focus:ring-1 focus:ring-[#6366F1] appearance-none cursor-pointer"
-              >
-                <option value="" disabled>Select Course</option>
-                {courses.map(course => (
-                  <option key={course.id} value={course.id.toString()}>
-                    {course.name || course.title || `Course ${course.id}`}
-                  </option>
-                ))}
-              </select>
-              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-              </div>
-            </div>
-          </div>
-        </div>
+        <AttendanceFilterBar
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          fromDate={fromDate}
+          onFromDateChange={setFromDate}
+          toDate={toDate}
+          onToDateChange={setToDate}
+          courseId={courseId}
+          onCourseIdChange={setCourseId}
+          courses={courses}
+        />
 
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
@@ -246,133 +188,31 @@ const Attendance = () => {
           </div>
         ) : (
           <div className="w-full">
-
-            {/* Grid (2 per row) */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
-
-              {filteredStudents.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((student, index) => (
-                <div
-                  key={student.student_id}
-                  className="flex flex-wrap items-center justify-between p-4 rounded-xl border border-gray-100 hover:shadow-md transition bg-white gap-4"
-                >
-
-                  {/* LEFT */}
-                  <div className="flex flex-wrap items-center gap-4">
-
-                    {/* Avatar with dynamic color */}
-                    <div
-                      className="w-11 h-11 rounded-full flex items-center justify-center 
-             text-white font-semibold flex-shrink-0
-             bg-gradient-to-r from-[#615FFF] to-[#AD46FF]"
-                    >
-                      {student.student_name?.charAt(0)?.toUpperCase()}
-                    </div>
-
-                    {/* Name + ID */}
-                    <div>
-                      <p
-                        className="font-bold text-[#101828]"
-                        style={{
-                          fontFamily: "Inter",
-                          fontSize: "25px",
-                          lineHeight: "45.3px",
-                          letterSpacing: "-0.74px",
-                        }}
-                      >
-                        {student.student_name}
-                      </p>
-                      <p
-                        className="text-gray-500"
-                        style={{
-                          fontFamily: "Inter",
-                          fontWeight: 400,
-                          fontSize: "20px",
-                          lineHeight: "33.55px",
-                          letterSpacing: "-0.25px",
-                        }}
-                      >
-                        Student id: {student.student_id}
-                      </p>
-                    </div>
-
-                  </div>
-
-                  {/* RIGHT BUTTON (FILLED) */}
-                  <button
-                    onClick={() => navigate(`/dashboard/attendance/details/${student.student_id}?course_id=${courseId}&from_date=${fromDate}&to_date=${toDate}`)}
-                    className="flex items-center justify-center gap-2 
-             text-white 
-             bg-gradient-to-r from-[#615FFF] to-[#AD46FF]
-             hover:from-[#514EF0] hover:to-[#9333EA]
-             transition shadow-sm"
-                    style={{
-                      width: "234px",
-                      height: "49px",
-                      borderRadius: "13.49px",
-                    }}
-                  >
-                    <Eye className="w-5 h-5" />
-                    View Details
-                  </button>
-
-                </div>
-              ))}
-
+              {filteredStudents
+                .slice(
+                  (currentPage - 1) * itemsPerPage,
+                  currentPage * itemsPerPage
+                )
+                .map((student) => (
+                  <AttendanceStudentCard
+                    key={student.student_id}
+                    student={student}
+                    onViewDetails={() =>
+                      navigate(
+                        `/dashboard/attendance/details/${student.student_id}?course_id=${courseId}&from_date=${fromDate}&to_date=${toDate}`
+                      )
+                    }
+                  />
+                ))}
             </div>
 
-            {/* ================= PAGINATION ================= */}
-            {filteredStudents.length > 0 && (
-              <div className="flex flex-col sm:flex-row items-center justify-start py-5 mt-4 border-t border-gray-100 gap-6 w-full">
-                <div className="text-[13px] font-medium text-[#6B7280]">
-                  Showing {filteredStudents.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}-{Math.min(currentPage * itemsPerPage, filteredStudents.length)} of {filteredStudents.length}
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                    disabled={currentPage === 1}
-                    className="px-4 py-1.5 rounded-full border border-gray-200 text-[#374151] text-[13px] font-semibold hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-white h-[34px] flex items-center justify-center"
-                  >
-                    Previous
-                  </button>
-
-                  {Array.from({ length: Math.ceil(filteredStudents.length / itemsPerPage) }).map((_, i) => {
-                    const pageNumber = i + 1;
-                    if (
-                      pageNumber === 1 ||
-                      pageNumber === Math.ceil(filteredStudents.length / itemsPerPage) ||
-                      (pageNumber >= currentPage - 1 && pageNumber <= currentPage + 1)
-                    ) {
-                      return (
-                        <button
-                          key={pageNumber}
-                          onClick={() => setCurrentPage(pageNumber)}
-                          className={`w-[34px] h-[34px] flex items-center justify-center rounded-full text-[13px] font-bold transition-all ${currentPage === pageNumber
-                            ? "bg-[#6366F1] text-white shadow-[0_4px_10px_rgba(99,102,241,0.3)] border border-transparent"
-                            : "bg-white text-[#374151] border border-gray-200 hover:bg-gray-50 hover:border-gray-300"
-                            }`}
-                        >
-                          {pageNumber}
-                        </button>
-                      );
-                    }
-
-                    if (pageNumber === currentPage - 2 || pageNumber === currentPage + 2) {
-                      return <span key={pageNumber} className="text-gray-400 font-bold px-1">...</span>;
-                    }
-
-                    return null;
-                  })}
-
-                  <button
-                    onClick={() => setCurrentPage((p) => Math.min(Math.ceil(filteredStudents.length / itemsPerPage), p + 1))}
-                    disabled={currentPage === Math.ceil(filteredStudents.length / itemsPerPage) || filteredStudents.length === 0}
-                    className="px-4 py-1.5 rounded-full border border-gray-200 text-[#374151] text-[13px] font-semibold hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-white h-[34px] flex items-center justify-center"
-                  >
-                    Next
-                  </button>
-                </div>
-              </div>
-            )}
+            <AttendancePagination
+              currentPage={currentPage}
+              totalFiltered={filteredStudents.length}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
+            />
           </div>
         )}
       </div>

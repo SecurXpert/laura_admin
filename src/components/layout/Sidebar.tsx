@@ -210,7 +210,7 @@ const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
       >
         {/* Logo Section matching the requested screenshot */}
         <div className={cn(
-          "pt-6 pb-4 flex items-center justify-between px-4 relative transition-all duration-300",
+          "pt-6 pb-4 flex items-center justify-between px-4 relative transition-all duration-300 flex-shrink-0",
           isCollapsed && "flex-col gap-4 px-2 justify-center"
         )}>
           {isCollapsed ? (
@@ -251,7 +251,7 @@ const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
         </div>
 
         {/* Navigation List perfectly aligned with crisp outline icons */}
-        <div className="flex-1 overflow-y-auto scrollbar-hide mt-1">
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain scrollbar-hide mt-1">
           <nav className="flex flex-col space-y-0.5 py-1">
             {menuItems.map((item) => {
               const Icon = item.icon;

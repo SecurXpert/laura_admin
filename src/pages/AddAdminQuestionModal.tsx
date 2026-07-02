@@ -30,6 +30,10 @@ const AddAdminQuestionModal: React.FC<AddQuestionModalProps> = ({ quizzes, onClo
   const [trainers, setTrainers] = useState<{id: number, name: string}[]>([]);
 
   React.useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, []);
+
+  React.useEffect(() => {
     const fetchTrainers = async () => {
       try {
         const token = getToken();
@@ -111,7 +115,7 @@ const AddAdminQuestionModal: React.FC<AddQuestionModalProps> = ({ quizzes, onClo
 
   return (
     <div className="w-full space-y-6 relative">
-      <div className="sticky top-[64px] z-40 bg-[#F8F9FB]/95 backdrop-blur-sm py-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 -mt-4 px-2 rounded-b-lg">
+      <div className="sticky top-[64px] z-40 bg-[#F8F9FB]/95 backdrop-blur-md py-4 px-4 sm:px-6 -mx-4 sm:-mx-6 -mt-3 sm:-mt-4 border-b border-slate-200/80 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 transition-all">
         <div>
           <button
             onClick={onClose}
@@ -128,11 +132,11 @@ const AddAdminQuestionModal: React.FC<AddQuestionModalProps> = ({ quizzes, onClo
           </p>
         </div>
 
-        <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+        <div className="flex items-center gap-3 w-full sm:w-auto justify-end sm:justify-end">
           <Button
             onClick={handleAddQuestion}
             disabled={loading}
-            className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-md text-sm font-medium rounded-xl px-6 py-2.5"
+            className="flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-md text-sm font-medium rounded-xl px-6 py-2.5 w-full sm:w-auto cursor-pointer"
           >
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <PlusCircle className="w-4 h-4" />}
             <span>Save Question</span>

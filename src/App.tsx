@@ -63,6 +63,8 @@ import RegisteredUsers from "./pages/RegisteredUsers";
 import Certificates from "./pages/Certificates";
 import ResumeBuilder from "./pages/Resume";
 import Results from "./pages/Results";
+import SubAdminLogin from "./subadmin/src/pages/Login";
+import { SubAdminRoutes } from "./subadmin/src/App";
 
 
 
@@ -80,6 +82,8 @@ const App = () => {
           <Routes>
             {/* Public */}
             <Route path="/" element={<AdminLogin />} />
+            <Route path="/subadmin-login" element={<SubAdminLogin />} />
+            <Route path="/subadmin/*" element={<SubAdminRoutes />} />
 
             {/* Protected Routes (No /dashboard prefix) */}
             <Route
@@ -217,6 +221,10 @@ const App = () => {
               <Route path="ADMINENROLLMENTS" element={<ADMINENROLLMENTS />} />
 
               {/* Admin */}
+
+
+              
+
               <Route path="sub-admins" element={<SubAdmins />} />
               <Route path="students" element={<Student />} />
               <Route path="Students" element={<Student />} />

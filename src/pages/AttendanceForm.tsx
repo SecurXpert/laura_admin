@@ -1,18 +1,17 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams, useLocation, useSearchParams } from "react-router-dom";
-import { API_BASE_URL } from "@/services/api/api";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { ArrowLeft, Info, AlertCircle, CheckCircle2, User, Calendar, Clock, BookOpen } from "lucide-react";
-import { toast } from "@/components/ui/use-toast";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  useNavigate,
+  useParams,
+  useLocation,
+  useSearchParams,
+} from "react-router-dom";
+import { API_BASE_URL } from "@/services/api/api";
+import { toast } from "@/components/ui/use-toast";
+
+import { AttendanceFormHeader } from "./AttendanceComponents/AttendanceFormHeader";
+import { AttendanceFields } from "./AttendanceComponents/AttendanceFields";
+import { AttendanceEditInfoCards } from "./AttendanceComponents/AttendanceEditInfoCards";
+import { AttendanceAddInfoCards } from "./AttendanceComponents/AttendanceAddInfoCards";
 
 interface AttendanceRecord {
   id: number;
@@ -32,37 +31,38 @@ const AttendanceForm = () => {
   const record = location.state?.record;
   const { id } = useParams();
   const isEdit = !!id;
+
   const getISTTodayDateString = () => {
-    const formatter = new Intl.DateTimeFormat('en-US', {
-      timeZone: 'Asia/Kolkata',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit'
+    const formatter = new Intl.DateTimeFormat("en-US", {
+      timeZone: "Asia/Kolkata",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
     });
     const parts = formatter.formatToParts(new Date());
-    const month = parts.find(p => p.type === 'month')?.value;
-    const day = parts.find(p => p.type === 'day')?.value;
-    const year = parts.find(p => p.type === 'year')?.value;
+    const month = parts.find((p) => p.type === "month")?.value;
+    const day = parts.find((p) => p.type === "day")?.value;
+    const year = parts.find((p) => p.type === "year")?.value;
     return `${year}-${month}-${day}`;
   };
 
   const getISTCurrentDateTimeString = () => {
-    const formatter = new Intl.DateTimeFormat('en-US', {
-      timeZone: 'Asia/Kolkata',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false
+    const formatter = new Intl.DateTimeFormat("en-US", {
+      timeZone: "Asia/Kolkata",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
     });
     const parts = formatter.formatToParts(new Date());
-    const month = parts.find(p => p.type === 'month')?.value;
-    const day = parts.find(p => p.type === 'day')?.value;
-    const year = parts.find(p => p.type === 'year')?.value;
-    const hour = parts.find(p => p.type === 'hour')?.value;
-    const minute = parts.find(p => p.type === 'minute')?.value;
-    const correctedHour = hour === '24' ? '00' : hour;
+    const month = parts.find((p) => p.type === "month")?.value;
+    const day = parts.find((p) => p.type === "day")?.value;
+    const year = parts.find((p) => p.type === "year")?.value;
+    const hour = parts.find((p) => p.type === "hour")?.value;
+    const minute = parts.find((p) => p.type === "minute")?.value;
+    const correctedHour = hour === "24" ? "00" : hour;
     return `${year}-${month}-${day}T${correctedHour}:${minute}`;
   };
 
@@ -76,7 +76,9 @@ const AttendanceForm = () => {
         const headers = { Authorization: `Bearer ${token}` };
 
         // Fetch Courses
-        const courseRes = await fetch(`${API_BASE_URL}/admin/courses`, { headers });
+        const courseRes = await fetch(`${API_BASE_URL}/admin/courses`, {
+          headers,
+        });
         if (courseRes.ok) {
           const courseData = await courseRes.json();
           let coursesArray = [];
@@ -113,7 +115,9 @@ const AttendanceForm = () => {
     status: "present",
   });
 
-  const [selectedRecord, setSelectedRecord] = useState<AttendanceRecord | null>(null);
+  const [selectedRecord, setSelectedRecord] = useState<AttendanceRecord | null>(
+    null
+  );
 
   // Fetch attendance record if in edit mode
   useEffect(() => {
@@ -128,10 +132,10 @@ const AttendanceForm = () => {
           const date = new Date(dateTimeString);
           if (isNaN(date.getTime())) return dateTimeString;
           const year = date.getFullYear();
-          const month = String(date.getMonth() + 1).padStart(2, '0');
-          const day = String(date.getDate()).padStart(2, '0');
-          const hours = String(date.getHours()).padStart(2, '0');
-          const minutes = String(date.getMinutes()).padStart(2, '0');
+          const month = String(date.getMonth() + 1).padStart(2, "0");
+          const day = String(date.getDate()).padStart(2, "0");
+          const hours = String(date.getHours()).padStart(2, "0");
+          const minutes = String(date.getMinutes()).padStart(2, "0");
           return `${year}-${month}-${day}T${hours}:${minutes}`;
         } catch (error) {
           return dateTimeString || "";
@@ -180,27 +184,34 @@ const AttendanceForm = () => {
             method: "GET",
             headers: {
               "Content-Type": "application/json",
-              "Authorization": `Bearer ${token}`
-            }
+              Authorization: `Bearer ${token}`,
+            },
           });
 
-          if (!response.ok) throw new Error("Failed to fetch attendance record");
+          if (!response.ok)
+            throw new Error("Failed to fetch attendance record");
 
           const result = await response.json();
           let attendanceList: any[] = [];
           if (Array.isArray(result)) attendanceList = result;
-          else if (result && Array.isArray(result.data)) attendanceList = result.data;
-          else if (result && Array.isArray(result.items)) attendanceList = result.items;
+          else if (result && Array.isArray(result.data))
+            attendanceList = result.data;
+          else if (result && Array.isArray(result.items))
+            attendanceList = result.items;
 
-          const attendanceData = attendanceList.find((r: any) => r.id === Number(id));
+          const attendanceData = attendanceList.find(
+            (r: any) => r.id === Number(id)
+          );
           if (attendanceData) {
             populateForm(attendanceData);
           } else {
-            console.log("No attendance data found for this ID in the fetched list");
+            console.log(
+              "No attendance data found for this ID in the fetched list"
+            );
             toast({
               title: "Record Not Found",
               description: "Could not locate this attendance record.",
-              variant: "destructive"
+              variant: "destructive",
             });
           }
         } catch (error) {
@@ -241,12 +252,14 @@ const AttendanceForm = () => {
   const formatIST = (timeStr: string) => {
     if (!timeStr) return "Not set";
     try {
-      return new Date(timeStr).toLocaleTimeString("en-IN", {
-        timeZone: "Asia/Kolkata",
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: true,
-      }).toUpperCase();
+      return new Date(timeStr)
+        .toLocaleTimeString("en-IN", {
+          timeZone: "Asia/Kolkata",
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true,
+        })
+        .toUpperCase();
     } catch (e) {
       return "Invalid Date";
     }
@@ -259,13 +272,16 @@ const AttendanceForm = () => {
         throw new Error("No authentication token found");
       }
 
-      const response = await fetch(`${API_BASE_URL}/attendance/admin/view-attendance`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
+      const response = await fetch(
+        `${API_BASE_URL}/attendance/admin/view-attendance`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
         }
-      });
+      );
 
       if (!response.ok) {
         throw new Error("Failed to fetch attendance records");
@@ -274,7 +290,6 @@ const AttendanceForm = () => {
       const result = await response.json();
       console.log("Fetched attendance records:", result);
       return result;
-
     } catch (error) {
       console.error("Error fetching attendance records:", error);
       throw error;
@@ -321,20 +336,22 @@ const AttendanceForm = () => {
 
       const payload = {
         ...formData,
-        duration_hours
+        duration_hours,
       };
 
       const response = await fetch(url, {
         method: method,
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to ${isEdit ? "update" : "create"} attendance record`);
+        throw new Error(
+          `Failed to ${isEdit ? "update" : "create"} attendance record`
+        );
       }
 
       const result = await response.json();
@@ -342,15 +359,19 @@ const AttendanceForm = () => {
 
       toast({
         title: isEdit ? "Updated" : "Created",
-        description: isEdit ? "Attendance updated successfully" : "Attendance created successfully",
+        description: isEdit
+          ? "Attendance updated successfully"
+          : "Attendance created successfully",
         className: "bg-green-600 text-white",
         duration: 2000,
       });
 
       navigate("/dashboard/attendance");
-
     } catch (error) {
-      console.error(`Error ${isEdit ? "updating" : "creating"} attendance:`, error);
+      console.error(
+        `Error ${isEdit ? "updating" : "creating"} attendance:`,
+        error
+      );
       toast({
         title: "Error",
         description: `Failed to ${isEdit ? "update" : "create"} attendance`,
@@ -363,487 +384,47 @@ const AttendanceForm = () => {
 
   return (
     <div className="space-y-6 relative">
-
-      {/* HEADER */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => navigate("/dashboard/attendance")}
-            className="w-9 h-9 rounded-full border border-gray-300 flex items-center justify-center bg-white shadow-sm"
-          >
-            <ArrowLeft className="w-4 h-4 text-gray-600" />
-          </button>
-
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              {isEdit ? "Edit Attendance" : "Add Attendance"}
-            </h1>
-
-            <p className="text-sm text-gray-500 mt-1">
-              {isEdit
-                ? "Update attendance record"
-                : "Create and configure a new attendance record"}
-            </p>
-          </div>
-        </div>
-      </div>
+      <AttendanceFormHeader
+        isEdit={isEdit}
+        onBack={() => navigate("/dashboard/attendance")}
+      />
 
       {/* MAIN CONTENT */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
-
-        {/* LEFT SIDE FORM */}
-        <div className="lg:col-span-2 flex flex-col">
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 flex-1 flex flex-col justify-between">
-            <div className="space-y-6">
-
-              {/* Student ID */}
-              {isEdit ? (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Attendance ID
-                  </label>
-
-                  <input
-                    type="text"
-                    value={id || ""}
-                    disabled
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-500"
-                  />
-                </div>
-              ) : (
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <User className="h-4 w-4 text-indigo-600" />
-
-                    <label className="text-sm font-medium text-gray-700">
-                      Student ID <span className="text-red-500">*</span>
-                    </label>
-                  </div>
-
-                <div className="relative">
-                  <Select name="student_id" value={formData.student_id || undefined} onValueChange={(val) => handleChange({ target: { name: "student_id", value: val } })}>
-                    <SelectTrigger className="h-11 w-full rounded-xl border border-gray-300 px-3 bg-white outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer shadow-none">
-                      <SelectValue placeholder="Select Student" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {students.map((student) => (
-                        <SelectItem key={student.id} value={student.id.toString()}>
-                          {student.name} (ID: {student.id})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                </div>
-              )}
-
-              {/* Course ID */}
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <BookOpen className="h-4 w-4 text-orange-600" />
-
-                  <label className="text-sm font-medium text-gray-700">
-                    Course ID <span className="text-red-500">*</span>
-                  </label>
-                </div>
-
-              <div className="relative">
-                <Select name="course_id" value={formData.course_id || undefined} onValueChange={(val) => handleChange({ target: { name: "course_id", value: val } })} disabled={isEdit}>
-                  <SelectTrigger className={`h-11 w-full rounded-xl border border-gray-300 px-3 focus:ring-2 focus:ring-indigo-500 outline-none ${isEdit ? "bg-gray-100 text-gray-500" : "bg-white"} cursor-pointer shadow-none`}>
-                    <SelectValue placeholder="Select Course" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {courses.map((course) => (
-                      <SelectItem key={course.id} value={course.id.toString()}>
-                        {course.title || `Course ID: ${course.id}`}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              </div>
-
-              {/* Date */}
-              {!isEdit && (
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <Calendar className="h-4 w-4 text-blue-600" />
-
-                    <label className="text-sm font-medium text-gray-700">
-                      Date <span className="text-red-500">*</span>
-                    </label>
-                  </div>
-
-                  <Input
-                    type="date"
-                    name="date"
-                    min={getISTTodayDateString()}
-                    value={formData.date || ""}
-                    onChange={handleChange}
-                    className="h-11 w-full rounded-xl border border-gray-300"
-                  />
-
-                  <p className="text-xs text-gray-500 mt-1">
-                    Cannot select past dates
-                  </p>
-                </div>
-              )}
-
-              {/* Times */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-                {/* Check-in */}
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <Clock className="h-4 w-4 text-green-600" />
-
-                    <label className="text-sm font-medium text-gray-700">
-                      Check-in Time <span className="text-red-500">*</span>
-                    </label>
-                  </div>
-
-                  <Input
-                    type="datetime-local"
-                    name="check_in_time"
-                    min={isEdit ? undefined : getISTCurrentDateTimeString()}
-                    value={formData.check_in_time}
-                    onChange={handleChange}
-                    className="h-11 w-full rounded-xl border border-gray-300"
-                  />
-                </div>
-
-                {/* Check-out */}
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <Clock className="h-4 w-4 text-red-600" />
-
-                    <label className="text-sm font-medium text-gray-700">
-                      Check-out Time <span className="text-red-500">*</span>
-                    </label>
-                  </div>
-
-                  <Input
-                    type="datetime-local"
-                    name="check_out_time"
-                    min={isEdit ? undefined : (formData.check_in_time || getISTCurrentDateTimeString())}
-                    value={formData.check_out_time}
-                    onChange={handleChange}
-                    className="h-11 w-full rounded-xl border border-gray-300"
-                  />
-                </div>
-              </div>
-
-              {/* Status Dropdown */}
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <User className="h-4 w-4 text-emerald-600" />
-                  <label className="text-sm font-medium text-gray-700">
-                    Status <span className="text-red-500">*</span>
-                  </label>
-                </div>
-              <div className="relative">
-                <Select name="status" value={formData.status || undefined} onValueChange={(val) => handleChange({ target: { name: "status", value: val } })}>
-                  <SelectTrigger className="h-11 w-full rounded-xl border border-gray-300 px-3 bg-white focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer shadow-none">
-                    <SelectValue placeholder="Select Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="present">Present</SelectItem>
-                    <SelectItem value="absent">Absent</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              </div>
-
-              {/* Duration */}
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <Clock className="h-4 w-4 text-purple-600" />
-
-                  <label className="text-sm font-medium text-gray-700">
-                    Duration (Auto-calculated)
-                  </label>
-                </div>
-
-                <Input
-                  value={getDuration()}
-                  readOnly
-                  placeholder="Duration will be calculated automatically"
-                  className="h-11 w-full rounded-xl bg-gray-100 border border-gray-300"
-                />
-
-                <p className="text-xs text-gray-500 mt-1">
-                  Based on check-in and check-out times
-                </p>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex justify-between gap-4 pt-4 border-t">
-                <Button
-                  className="w-1/2 h-11 rounded-xl text-white bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 transition-all duration-300 hover:scale-[1.03] hover:shadow-lg hover:shadow-indigo-500/30 active:scale-[0.98]"
-                  onClick={handleSubmit}
-                >
-                  {isEdit ? "Update Attendance" : "Create Attendance"}
-                </Button>
-
-                <Button
-                  variant="outline"
-                  className="w-1/2 h-11 rounded-xl border border-gray-300 transition-all duration-300 hover:bg-gray-100 hover:border-gray-400 hover:shadow-sm hover:scale-[1.03] active:scale-[0.98]"
-                  onClick={() => navigate("/dashboard/attendance")}
-                >
-                  Cancel
-                </Button>
-              </div>
-
-            </div>
-          </div>
-        </div>
+        <AttendanceFields
+          isEdit={isEdit}
+          id={id}
+          formData={formData}
+          students={students}
+          courses={courses}
+          minDate={getISTTodayDateString()}
+          minCheckIn={isEdit ? undefined : getISTCurrentDateTimeString()}
+          minCheckOut={
+            isEdit
+              ? undefined
+              : formData.check_in_time || getISTCurrentDateTimeString()
+          }
+          durationText={getDuration()}
+          onChange={handleChange}
+          onSubmit={handleSubmit}
+          onCancel={() => navigate("/dashboard/attendance")}
+        />
 
         {/* RIGHT SIDE DYNAMIC INFO */}
         <div className="flex flex-col justify-between space-y-6 h-full">
           {isEdit ? (
-            <>
-              {/* RECORD INFORMATION CARD */}
-              <div className="bg-[#f8faff] rounded-2xl p-6 border border-blue-100 shadow-sm">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center text-white">
-                    <Info className="w-3 h-3 stroke-[2.5]" />
-                  </div>
-                  <h3 className="text-[16px] font-bold text-gray-900">
-                    Record Information
-                  </h3>
-                </div>
-
-                <div className="space-y-3 mb-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-gray-500 font-medium">Last Updated:</span>
-                    <span className="text-xs font-bold text-gray-900">
-                      {formData.date ? `${formData.date} ` : ""}{formatIST(formData.check_in_time)}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-gray-500 font-medium">Updated By:</span>
-                    <span className="text-xs font-bold text-gray-900">Admin User</span>
-                  </div>
-                </div>
-
-                <div className="border-t border-blue-100 pt-3">
-                  <p className="text-[11px] text-gray-400 leading-relaxed">
-                    Changes will be tracked and timestamped for audit purposes.
-                  </p>
-                </div>
-              </div>
-
-              {/* PREVIOUS VALUES CARD */}
-              <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-                <h3 className="text-[16px] font-bold text-gray-900 mb-4">
-                  Previous Values
-                </h3>
-
-                <div className="space-y-3">
-                  {/* Student */}
-                  <div className="bg-[#f9fafb] p-3 rounded-xl">
-                    <span className="block text-[11px] text-gray-400 font-medium mb-1">Student</span>
-                    <span className="text-xs font-bold text-gray-900">
-                      {formData.student_id ? (students.find(s => (s.id || s.student_id || s.user_id)?.toString() === formData.student_id.toString())?.name || `Student ID: ${formData.student_id}`) : "Not entered"}
-                    </span>
-                  </div>
-
-                  {/* Course */}
-                  <div className="bg-[#f9fafb] p-3 rounded-xl">
-                    <span className="block text-[11px] text-gray-400 font-medium mb-1">Course</span>
-                    <span className="text-xs font-bold text-gray-900">
-                      {formData.course_id ? (courses.find(c => c.id?.toString() === formData.course_id.toString())?.title || `Course ID: ${formData.course_id}`) : "Not selected"}
-                    </span>
-                  </div>
-
-                  {/* Check-in / Check-out Side-by-Side */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-[#f9fafb] p-3 rounded-xl">
-                      <span className="block text-[11px] text-gray-400 font-medium mb-1">Check-in</span>
-                      <span className="text-xs font-bold text-gray-900">
-                        {formData.check_in_time ? formatIST(formData.check_in_time) : "--:--"}
-                      </span>
-                    </div>
-
-                    <div className="bg-[#f9fafb] p-3 rounded-xl">
-                      <span className="block text-[11px] text-gray-400 font-medium mb-1">Check-out</span>
-                      <span className="text-xs font-bold text-gray-900">
-                        {formData.check_out_time ? formatIST(formData.check_out_time) : "--:--"}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Date & Status */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-[#f9fafb] p-3 rounded-xl">
-                      <span className="block text-[11px] text-gray-400 font-medium mb-1">Date</span>
-                      <span className="text-xs font-bold text-gray-900">
-                        {formData.date ? new Date(formData.date).toLocaleDateString("en-IN") : "Not entered"}
-                      </span>
-                    </div>
-
-                    <div className="bg-[#f9fafb] p-3 rounded-xl">
-                      <span className="block text-[11px] text-gray-400 font-medium mb-1">Status</span>
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 capitalize">
-                        {formData.status || "Present"}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* VALIDATION RULES CARD */}
-              <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex-1 flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center gap-2 mb-4">
-                    <AlertCircle className="w-5 h-5 text-orange-500" />
-                    <h3 className="text-[16px] font-bold text-gray-900">
-                      Validation Rules
-                    </h3>
-                  </div>
-
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2.5">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                      <span className="text-xs text-gray-600">All fields are required</span>
-                    </div>
-                    <div className="flex items-center gap-2.5">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                      <span className="text-xs text-gray-600">Date cannot be in the future</span>
-                    </div>
-                    <div className="flex items-center gap-2.5">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                      <span className="text-xs text-gray-600">Check-out must be after check-in</span>
-                    </div>
-                    <div className="flex items-center gap-2.5">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                      <span className="text-xs text-gray-600">Changes are auto-saved</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </>
+            <AttendanceEditInfoCards
+              formData={formData}
+              students={students}
+              courses={courses}
+              formatIST={formatIST}
+            />
           ) : (
-            <>
-              {/* QUICK TIPS */}
-              <div className="bg-white rounded-[22px] shadow-[0_8px_30px_rgba(99,102,241,0.08)] border border-[#f3f4f6] p-6">
-                {/* Heading */}
-                <div className="flex items-center gap-2 mb-5">
-                  <div className="w-5 h-5 rounded-full border border-indigo-500 flex items-center justify-center">
-                    <span className="text-[11px] text-indigo-600 font-bold">i</span>
-                  </div>
-
-                  <h3 className="text-[15px] font-semibold text-[#111827]">
-                    Quick Tips
-                  </h3>
-                </div>
-
-                {/* Tips */}
-                <div className="space-y-5">
-                  <div className="flex items-start gap-3">
-                    <div className="w-[6px] h-[6px] rounded-full bg-indigo-500 mt-[7px] flex-shrink-0"></div>
-                    <p className="text-[14px] leading-[22px] text-[#4b5563]">
-                      Select the student from the dropdown
-                      <br />
-                      to view their details
-                    </p>
-                  </div>
-
-                  <div className="flex items-start gap-3">
-                    <div className="w-[6px] h-[6px] rounded-full bg-indigo-500 mt-[7px] flex-shrink-0"></div>
-                    <p className="text-[14px] leading-[22px] text-[#4b5563]">
-                      Date cannot be in the future
-                    </p>
-                  </div>
-
-                  <div className="flex items-start gap-3">
-                    <div className="w-[6px] h-[6px] rounded-full bg-indigo-500 mt-[7px] flex-shrink-0"></div>
-                    <p className="text-[14px] leading-[22px] text-[#4b5563]">
-                      Duration is calculated automatically from
-                      <br />
-                      times
-                    </p>
-                  </div>
-
-                  <div className="flex items-start gap-3">
-                    <div className="w-[6px] h-[6px] rounded-full bg-indigo-500 mt-[7px] flex-shrink-0"></div>
-                    <p className="text-[14px] leading-[22px] text-[#4b5563]">
-                      Status is auto-detected but can be
-                      <br />
-                      changed manually
-                    </p>
-                  </div>
-
-                  <div className="flex items-start gap-3">
-                    <div className="w-[6px] h-[6px] rounded-full bg-indigo-500 mt-[7px] flex-shrink-0"></div>
-                    <p className="text-[14px] leading-[22px] text-[#4b5563]">
-                      Check-out time must be after check-in time
-                    </p>
-                  </div>
-
-                  <div className="flex items-start gap-3">
-                    <div className="w-[6px] h-[6px] rounded-full bg-indigo-500 mt-[7px] flex-shrink-0"></div>
-                    <p className="text-[14px] leading-[22px] text-[#4b5563]">
-                      Attendance records are saved automatically
-                      <br />
-                      when all required fields are filled
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* CURRENT ATTENDANCE INFO */}
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 flex-1 flex flex-col justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-5">
-                    <span className="text-indigo-600">📊</span>
-                    Current Attendance
-                  </h3>
-
-                  <div className="space-y-4">
-                    {/* Student ID Display */}
-                    <div className="flex items-center justify-between bg-gray-50 px-4 py-3 rounded-xl">
-                      <span className="text-sm text-gray-700">Student ID</span>
-                      <span className="text-sm font-semibold text-gray-900">
-                        {formData.student_id || "Not entered"}
-                      </span>
-                    </div>
-
-                    {/* Date Display */}
-                    <div className="flex items-center justify-between bg-blue-50 px-4 py-3 rounded-xl">
-                      <span className="text-sm text-gray-700">Date</span>
-                      <span className="text-sm font-semibold text-blue-600">
-                        {formData.date ? new Date(formData.date).toLocaleDateString() : "Not selected"}
-                      </span>
-                    </div>
-
-                    {/* Check-in Display */}
-                    <div className="flex items-center justify-between bg-green-50 px-4 py-3 rounded-xl">
-                      <span className="text-sm text-gray-700">Check-in</span>
-                      <span className="text-sm font-semibold text-green-600">
-                        {formatIST(formData.check_in_time)}
-                      </span>
-                    </div>
-
-                    {/* Check-out Display */}
-                    <div className="flex items-center justify-between bg-red-50 px-4 py-3 rounded-xl">
-                      <span className="text-sm text-gray-700">Check-out</span>
-                      <span className="text-sm font-semibold text-red-600">
-                        {formatIST(formData.check_out_time)}
-                      </span>
-                    </div>
-
-                    {/* Duration Display */}
-                    <div className="flex items-center justify-between bg-purple-50 px-4 py-3 rounded-xl">
-                      <span className="text-sm text-gray-700">Duration</span>
-                      <span className="text-sm font-semibold text-purple-600">
-                        {getDuration() || "Calculating..."}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </>
+            <AttendanceAddInfoCards
+              formData={formData}
+              formatIST={formatIST}
+              durationText={getDuration()}
+            />
           )}
         </div>
       </div>

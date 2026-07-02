@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { X, UploadCloud, ArrowLeft, ChevronDown } from "lucide-react";
 import { API_BASE_URL } from "@/services/api/api";
+import { ScrollableDropdown } from "@/components/ScrollableDropdown";
 
 interface UploadVideoFormProps {
   onClose: () => void;
@@ -79,8 +80,8 @@ const UploadVideoForm = ({ onClose, onSuccess, editVideoId, initialData }: Uploa
     if (name === "course_id") {
       const selectedCourse = courses.find(c => c.id?.toString() === value || c.course_id?.toString() === value);
       const matchedInstructorId = selectedCourse?.instructor_id || selectedCourse?.instructorId || selectedCourse?.trainer_id || selectedCourse?.instructor?.id || "";
-      setFormData((prev) => ({ 
-        ...prev, 
+      setFormData((prev) => ({
+        ...prev,
         course_id: value,
         ...(matchedInstructorId && { trainer_id: matchedInstructorId.toString() })
       }));
@@ -120,7 +121,7 @@ const UploadVideoForm = ({ onClose, onSuccess, editVideoId, initialData }: Uploa
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!file && !editVideoId) {
       toast({
@@ -131,56 +132,64 @@ const UploadVideoForm = ({ onClose, onSuccess, editVideoId, initialData }: Uploa
       return;
     }
 
-    setLoading(true);
+    const token = localStorage.getItem("token");
 
-    try {
-      const token = localStorage.getItem("token");
-
-      const submitData = new FormData();
-      submitData.append("course_id", formData.course_id);
-      submitData.append("title", formData.title);
-      submitData.append("trainer_id", formData.trainer_id);
-      submitData.append("recorded_date", formData.recorded_date);
-      if (file) {
-        submitData.append("video_file", file);
-      }
-
-      const url = editVideoId
-        ? `${API_BASE_URL}/admin/recorded-video/${editVideoId}`
-        : `${API_BASE_URL}/admin/upload-recorded-video`;
-
-      const method = editVideoId ? "PUT" : "POST";
-
-      const response = await fetch(url, {
-        method: method,
-        headers: {
-          Authorization: `Bearer ${token}`,
-          // Don't set Content-Type, browser will automatically set it with the correct boundary for multipart/form-data
-        },
-        body: submitData,
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to upload video");
-      }
-
-      toast({
-        title: "Success",
-        description: editVideoId ? "Video updated successfully" : "Video uploaded successfully",
-        className: "!bg-emerald-600 !text-white !font-medium !p-4 !rounded-[16px] !shadow-lg !border-none",
-      });
-      if (onSuccess) onSuccess();
-      onClose();
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: editVideoId ? "Failed to update video. Please try again." : "Failed to upload video. Please try again.",
-        className: "!bg-red-600 !text-white !font-medium !p-4 !rounded-[16px] !shadow-lg !border-none",
-      });
-    } finally {
-      setLoading(false);
+    const submitData = new FormData();
+    submitData.append("course_id", formData.course_id);
+    submitData.append("title", formData.title);
+    submitData.append("trainer_id", formData.trainer_id);
+    submitData.append("recorded_date", formData.recorded_date);
+    if (file) {
+      submitData.append("video_file", file);
     }
+
+    const url = editVideoId
+      ? `${API_BASE_URL}/admin/recorded-video/${editVideoId}`
+      : `${API_BASE_URL}/admin/upload-recorded-video`;
+
+    const method = editVideoId ? "PUT" : "POST";
+
+    // Notify user immediately and close modal for instant responsiveness
+    toast({
+      title: editVideoId ? "Updating Video..." : "Upload Started 🚀",
+      description: editVideoId 
+        ? "Your changes are saving in the background." 
+        : "Video is uploading in the background. You can continue working!",
+      className: "!bg-blue-600 !text-white !font-medium !p-4 !rounded-[16px] !shadow-lg !border-none",
+    });
+
+    onClose();
+
+    // Process upload in the background without blocking the UI
+    (async () => {
+      try {
+        const response = await fetch(url, {
+          method: method,
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          body: submitData,
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to upload video");
+        }
+
+        toast({
+          title: "Success ✨",
+          description: editVideoId ? "Video updated successfully" : "Video uploaded successfully",
+          className: "!bg-emerald-600 !text-white !font-medium !p-4 !rounded-[16px] !shadow-lg !border-none",
+        });
+        if (onSuccess) onSuccess();
+      } catch (error) {
+        toast({
+          variant: "destructive",
+          title: "Error ❌",
+          description: editVideoId ? "Failed to update video. Please try again." : "Failed to upload video. Please try again.",
+          className: "!bg-red-600 !text-white !font-medium !p-4 !rounded-[16px] !shadow-lg !border-none",
+        });
+      }
+    })();
   };
 
   return (
@@ -209,25 +218,15 @@ const UploadVideoForm = ({ onClose, onSuccess, editVideoId, initialData }: Uploa
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
             <Label htmlFor="course_id" className="text-sm font-medium text-gray-700">Course <span className="text-red-500">*</span></Label>
-            <div className="relative">
-              <select
-                id="course_id"
-                name="course_id"
-                required
-                value={formData.course_id}
-                onChange={handleChange}
-                disabled={!!editVideoId}
-                className={`w-full pl-3 pr-10 py-2.5 border border-gray-200 rounded-lg text-[14px] text-gray-700 outline-none focus:ring-1 focus:ring-[#6366F1] appearance-none ${!!editVideoId ? "bg-gray-100 cursor-not-allowed opacity-70" : "bg-white cursor-pointer"}`}
-              >
-                <option value="" disabled>Select Course</option>
-                {courses.map((c) => (
-                  <option key={c.id} value={c.id.toString()}>
-                    {c.title || c.name || `Course ${c.id}`}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
-            </div>
+            <ScrollableDropdown
+              name="course_id"
+              value={formData.course_id}
+              onChange={handleChange}
+              disabled={!!editVideoId}
+              options={courses.map((c) => ({ value: c.id.toString(), label: c.title || c.name || `Course ${c.id}` }))}
+              placeholder="Select Course"
+              dropdownClassName="scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+            />
           </div>
 
           <div className="space-y-2">
@@ -246,25 +245,15 @@ const UploadVideoForm = ({ onClose, onSuccess, editVideoId, initialData }: Uploa
 
           <div className="space-y-2">
             <Label htmlFor="trainer_id" className="text-sm font-medium text-gray-700">Instructor <span className="text-red-500">*</span></Label>
-            <div className="relative">
-              <select
-                id="trainer_id"
-                name="trainer_id"
-                required
-                value={formData.trainer_id}
-                onChange={handleChange}
-                disabled={!!editVideoId}
-                className={`w-full pl-3 pr-10 py-2.5 border border-gray-200 rounded-lg text-[14px] text-gray-700 outline-none focus:ring-1 focus:ring-[#6366F1] appearance-none ${!!editVideoId ? "bg-gray-100 cursor-not-allowed opacity-70" : "bg-white cursor-pointer"}`}
-              >
-                <option value="" disabled>Select Instructor</option>
-                {instructors.map((i) => (
-                  <option key={i.id} value={i.id.toString()}>
-                    {i.name || i.email || `Instructor ${i.id}`}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
-            </div>
+            <ScrollableDropdown
+              name="trainer_id"
+              value={formData.trainer_id}
+              onChange={handleChange}
+              disabled={!!editVideoId}
+              options={instructors.map((i) => ({ value: i.id.toString(), label: i.name || i.email || `Instructor ${i.id}` }))}
+              placeholder="Select Instructor"
+              dropdownClassName="scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+            />
           </div>
 
           <div className="space-y-2">
@@ -274,7 +263,7 @@ const UploadVideoForm = ({ onClose, onSuccess, editVideoId, initialData }: Uploa
               name="recorded_date"
               type="date"
               required
-              min={new Date().toISOString().split('T')[0]}
+              max={new Date().toISOString().split('T')[0]}
               value={formData.recorded_date}
               onChange={handleChange}
               className="bg-white border-gray-200 focus-visible:ring-1 focus-visible:ring-[#6366F1] text-gray-600"
@@ -301,10 +290,10 @@ const UploadVideoForm = ({ onClose, onSuccess, editVideoId, initialData }: Uploa
               Drag and drop or click to upload
             </div>
             <div className="text-xs text-gray-400">
-              {file 
-                ? file.name 
-                : editVideoId 
-                  ? "Existing video kept. Upload a new one to replace." 
+              {file
+                ? file.name
+                : editVideoId
+                  ? "Existing video kept. Upload a new one to replace."
                   : "Video files only (e.g. MP4, WebM)"}
             </div>
           </div>

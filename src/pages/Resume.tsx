@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from "@/lib/api";
-import { FileText, User, MapPin, GraduationCap, Briefcase, Mail, Phone, ArrowLeft, Loader2 } from 'lucide-react';
+import { FileText, User, MapPin, GraduationCap, Briefcase, Mail, Phone, ArrowLeft, Loader2, Eye } from 'lucide-react';
 import { Skeleton } from "@/components/ui/skeleton";
 
 // --- Types from GET /resumes/ ---
@@ -272,39 +272,67 @@ const ResumesList = () => {
           {resumes.map((resume, idx) => (
             <div
               key={idx}
-              onClick={() => setSelectedResume(resume)}
-              className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:shadow-lg hover:border-blue-300 cursor-pointer transition-all group relative overflow-hidden"
+              className="bg-white p-6 rounded-[24px] border border-gray-200/80 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-lg transition-all flex flex-col justify-between"
             >
-              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 to-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <div>
+                {/* Top Row: Avatar icon on left, Purple View button on right */}
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-14 h-14 bg-[#EFF6FF] rounded-2xl flex items-center justify-center text-[#3B82F6] flex-shrink-0 overflow-hidden">
+                    {resume.profile_photo_url ? (
+                      <img
+                        src={resume.profile_photo_url}
+                        alt="Profile"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <User className="w-6 h-6 stroke-[2.2]" />
+                    )}
+                  </div>
 
-              <div className="flex justify-between items-start mb-4">
-                <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600">
-                  <User className="w-6 h-6" />
+                  <button
+                    type="button"
+                    onClick={() => setSelectedResume(resume)}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-[#8B5CF6] to-[#6366F1] hover:opacity-95 text-white font-semibold text-sm rounded-full shadow-sm transition-all"
+                  >
+                    <Eye className="w-4 h-4" />
+                    <span>View</span>
+                  </button>
                 </div>
-                {resume.city && (
-                  <span className="text-xs font-semibold bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full flex items-center gap-1">
-                    <MapPin className="w-3 h-3" /> {resume.city}
-                  </span>
-                )}
-              </div>
-              <h3 className="font-bold text-lg text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-1">
-                {getFullName(resume)}
-              </h3>
-              <p className="text-sm font-medium text-gray-500 mt-1 line-clamp-1">{resume.job_title}</p>
 
-              <div className="mt-5 pt-4 border-t border-gray-100 space-y-2">
-                {resume.email && (
-                  <div className="flex items-center gap-2 text-sm text-gray-500 line-clamp-1">
-                    <Mail className="w-3.5 h-3.5 text-gray-400" />
-                    {resume.email}
-                  </div>
-                )}
-                {resume.phone_number && (
-                  <div className="flex items-center gap-2 text-sm text-gray-500 line-clamp-1">
-                    <Phone className="w-3.5 h-3.5 text-gray-400" />
-                    {resume.phone_number}
-                  </div>
-                )}
+                {/* Candidate Name & Title */}
+                <div className="mt-2">
+                  <h3 className="font-bold text-lg text-gray-900 line-clamp-1">
+                    {getFullName(resume)}
+                  </h3>
+                  <p className="text-sm font-medium text-[#4B5563] mt-1 line-clamp-1">
+                    {resume.job_title || "Candidate"}
+                  </p>
+                </div>
+
+                {/* Divider & Contact Info */}
+                <div className="mt-4 pt-4 border-t border-gray-100 space-y-3">
+                  {resume.email && (
+                    <div className="flex items-center gap-3 text-sm text-[#4B5563] line-clamp-1">
+                      <Mail className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                      <span className="truncate">{resume.email}</span>
+                    </div>
+                  )}
+                  {resume.phone_number && (
+                    <div className="flex items-center gap-3 text-sm text-[#4B5563] line-clamp-1">
+                      <Phone className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                      <span className="truncate">{resume.phone_number}</span>
+                    </div>
+                  )}
+                  {resume.city && (
+                    <div className="flex items-center gap-3 text-sm text-[#4B5563] line-clamp-1">
+                      <MapPin className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                      <span className="truncate">
+                        {resume.city}
+                        {resume.nationality ? `, ${resume.nationality}` : ""}
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           ))}

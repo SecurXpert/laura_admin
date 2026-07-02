@@ -22,14 +22,38 @@ const CreateGuestExamModal: React.FC<CreateGuestExamModalProps> = ({
   const [courseId, setCourseId] = useState(examToEdit ? examToEdit.course_id.toString() : "");
   const [category, setCategory] = useState(examToEdit ? examToEdit.category : "");
 
-  const [availableQuestions, setAvailableQuestions] = useState<{question_id: number, title: string}[]>([]);
+  const [availableQuestions, setAvailableQuestions] = useState<{ question_id: number, title: string }[]>([]);
   const [examQuestions, setExamQuestions] = useState<{ question_id: string; score: string; tempId: number }[]>(() => {
     if (examToEdit && examToEdit.questions) {
-      return Object.entries(examToEdit.questions).map(([qId, score], idx) => ({
-        question_id: qId,
-        score: String(score),
-        tempId: Date.now() + idx
-      }));
+      let qObj = examToEdit.questions;
+      if (typeof qObj === 'string') {
+        try { qObj = JSON.parse(qObj); } catch (e) { qObj = {}; }
+      }
+      if (qObj && typeof qObj === 'object') {
+        const list: { question_id: string; score: string; tempId: number }[] = [];
+        Object.entries(qObj).forEach(([key, val]: [string, any], idx) => {
+          if (val && typeof val === 'object' && val.question_bank_id !== undefined) {
+            list.push({
+              question_id: String(val.question_bank_id),
+              score: String(val.score ?? 10),
+              tempId: Date.now() + idx
+            });
+          } else if (val && typeof val === 'object' && val.score !== undefined) {
+            list.push({
+              question_id: String(key),
+              score: String(val.score),
+              tempId: Date.now() + idx
+            });
+          } else {
+            list.push({
+              question_id: String(key),
+              score: String(val),
+              tempId: Date.now() + idx
+            });
+          }
+        });
+        return list;
+      }
     }
     return [];
   });
@@ -92,22 +116,44 @@ const CreateGuestExamModal: React.FC<CreateGuestExamModalProps> = ({
     fetchData();
   }, []);
 
-  const fetchSingleQuestion = async () => {
+  const fetchSingleQuestion = async (id: number) => {
     try {
       const token = localStorage.getItem('access_token');
       const headers = { Authorization: token ? `Bearer ${token}` : '' };
-      const questionsRes = await api.get('/guest/compiler-questions/get', { headers });
-      let qData = [];
-      if (Array.isArray(questionsRes.data)) {
-        qData = questionsRes.data;
-      } else if (questionsRes.data?.data && Array.isArray(questionsRes.data.data)) {
-        qData = questionsRes.data.data;
+      const qRes = await api.get(`/guest/compiler-questions/get?question_id=${id}`, { headers });
+      let qData = null;
+      if (Array.isArray(qRes.data) && qRes.data.length > 0) {
+        qData = qRes.data[0];
+      } else if (qRes.data?.data && Array.isArray(qRes.data.data) && qRes.data.data.length > 0) {
+        qData = qRes.data.data[0];
+      } else if (qRes.data?.question_id) {
+        qData = qRes.data;
       }
-      setAvailableQuestions(qData);
-    } catch(e) {
+      if (qData) {
+        setAvailableQuestions(prev => {
+          if (!prev.find(q => String(q.question_id) === String(qData.question_id))) {
+            return [qData, ...prev];
+          }
+          return prev;
+        });
+      }
+    } catch (e) {
       console.error(e);
     }
   };
+
+  useEffect(() => {
+    if (examQuestions.length > 0 && availableQuestions.length > 0) {
+      examQuestions.forEach(eq => {
+        if (eq.question_id && !availableQuestions.some(q => String(q.question_id) === String(eq.question_id))) {
+          const numId = Number(eq.question_id);
+          if (!isNaN(numId) && numId > 0) {
+            fetchSingleQuestion(numId);
+          }
+        }
+      });
+    }
+  }, [examQuestions, availableQuestions]);
 
   const handleDurationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value.replace(/\D/g, ""); // Remove non-digits
@@ -135,9 +181,15 @@ const CreateGuestExamModal: React.FC<CreateGuestExamModalProps> = ({
       const endIso = new Date(windowEnd).toISOString();
 
       const questionsObj: any = {};
+      let qIndex = 1;
       examQuestions.forEach(q => {
-        if (q.question_id && q.score) {
-          questionsObj[q.question_id] = Number(q.score);
+        if (q.question_id) {
+          const sVal = q.score ? Number(q.score) : 10;
+          questionsObj[String(qIndex)] = {
+            question_bank_id: Number(q.question_id),
+            score: isNaN(sVal) || sVal <= 0 ? 10 : sVal
+          };
+          qIndex++;
         }
       });
 
@@ -413,7 +465,7 @@ const CreateGuestExamModal: React.FC<CreateGuestExamModalProps> = ({
                 </button>
                 <button
                   type="button"
-                  onClick={() => setExamQuestions([...examQuestions, { question_id: "", score: "", tempId: Date.now() }])}
+                  onClick={() => setExamQuestions([...examQuestions, { question_id: "", score: "10", tempId: Date.now() }])}
                   className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-500 rounded-lg hover:bg-indigo-600 transition-colors"
                 >
                   <FiPlus /> Add Questions
@@ -443,7 +495,7 @@ const CreateGuestExamModal: React.FC<CreateGuestExamModalProps> = ({
                     >
                       <option value="" disabled>Select a question</option>
                       {availableQuestions.map(q => (
-                        <option key={q.question_id} value={q.question_id}>{q.title}</option>
+                        <option key={q.question_id} value={String(q.question_id)}>{q.title}</option>
                       ))}
                     </select>
                     <FiChevronDown className="absolute right-3 top-4 text-gray-400 text-lg pointer-events-none" />
@@ -528,7 +580,7 @@ const CreateGuestExamModal: React.FC<CreateGuestExamModalProps> = ({
                   setShowAddQuestionModal(false);
                   fetchSingleQuestion(); // guest endpoint doesn't return id so just fetch all
                   if (newId) {
-                    setExamQuestions(prev => [...prev, { question_id: String(newId), score: "", tempId: Date.now() }]);
+                    setExamQuestions(prev => [...prev, { question_id: String(newId), score: "10", tempId: Date.now() }]);
                   }
                 }}
               />

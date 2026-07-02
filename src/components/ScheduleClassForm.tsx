@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, ChevronDown } from "lucide-react";
 import { API_BASE_URL } from "@/services/api/api";
+import { ScrollableDropdown } from "@/components/ScrollableDropdown";
 
 interface ScheduleClassFormProps {
   onClose: () => void;
@@ -134,29 +135,23 @@ const ScheduleClassForm = ({ onClose, onSuccess }: ScheduleClassFormProps) => {
       <form onSubmit={handleSubmit} className="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-gray-100 max-w-4xl space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
-            <Label htmlFor="course_id" className="text-sm font-medium text-gray-700">Course *</Label>
-            <div className="relative">
-              <select
-                id="course_id"
-                name="course_id"
-                required
-                value={formData.course_id}
-                onChange={handleChange}
-                className="h-11 w-full pl-3 pr-10 bg-white border border-gray-200 rounded-lg text-[14px] text-gray-700 outline-none focus:ring-1 focus:ring-[#6366F1] appearance-none"
-              >
-                <option value="" disabled>Select a course</option>
-                {courses.map(course => (
-                  <option key={course.id} value={course.id.toString()}>
-                    {course.name || course.title || `Course ${course.id}`}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
-            </div>
+            <Label htmlFor="course_id" className="text-sm font-medium text-gray-700">Course <span className="text-red-500">*</span></Label>
+            <ScrollableDropdown
+              name="course_id"
+              value={formData.course_id}
+              onChange={handleChange}
+              options={courses.map(course => ({
+                value: course.id.toString(),
+                label: course.name || course.title || `Course ${course.id}`
+              }))}
+              placeholder="Select a course"
+              buttonClassName="!h-11 !rounded-lg !border-gray-200"
+              dropdownClassName="scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+            />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="title" className="text-sm font-medium text-gray-700">Title</Label>
+            <Label htmlFor="title" className="text-sm font-medium text-gray-700">Title <span className="text-red-500">*</span></Label>
             <Input
               id="title"
               name="title"
@@ -170,7 +165,7 @@ const ScheduleClassForm = ({ onClose, onSuccess }: ScheduleClassFormProps) => {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="scheduled_at" className="text-sm font-medium text-gray-700">Schedule Date & Time</Label>
+            <Label htmlFor="scheduled_at" className="text-sm font-medium text-gray-700">Schedule Date & Time <span className="text-red-500">*</span></Label>
             <Input
               id="scheduled_at"
               name="scheduled_at"
@@ -184,7 +179,7 @@ const ScheduleClassForm = ({ onClose, onSuccess }: ScheduleClassFormProps) => {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="duration" className="text-sm font-medium text-gray-700">Duration</Label>
+            <Label htmlFor="duration" className="text-sm font-medium text-gray-700">Duration <span className="text-red-500">*</span></Label>
             <Input
               id="duration"
               name="duration"
@@ -198,7 +193,7 @@ const ScheduleClassForm = ({ onClose, onSuccess }: ScheduleClassFormProps) => {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="join_link" className="text-sm font-medium text-gray-700">Join Link</Label>
+            <Label htmlFor="join_link" className="text-sm font-medium text-gray-700">Join Link <span className="text-red-500">*</span></Label>
             <Input
               id="join_link"
               name="join_link"

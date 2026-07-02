@@ -41,7 +41,7 @@ export default function GuestDashboard() {
               }`}
             >
               <Target className="h-4 w-4" />
-              Quiz Listing
+              Exam Results
             </button>
           </div>
         </div>

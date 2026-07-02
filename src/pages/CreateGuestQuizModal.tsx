@@ -238,7 +238,7 @@ const CreateGuestQuizModal: React.FC<CreateGuestQuizModalProps> = ({
                   <FiUser className="absolute left-3 top-3 text-gray-400 text-lg pointer-events-none" />
 
                   <Select value={courseId || undefined} onValueChange={setCourseId}>
-                    <SelectTrigger className="w-full border border-gray-200 bg-gray-50 pl-10 h-[46px] rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 text-sm cursor-pointer shadow-none">
+                    <SelectTrigger className="w-full border border-gray-200 bg-gray-50 pl-10 h-[46px] rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 text-sm shadow-none cursor-pointer">
                       <SelectValue placeholder="Select a course" />
                     </SelectTrigger>
                     <SelectContent>

@@ -174,7 +174,7 @@ const StudentForm = () => {
           {/* PASSWORD */}
           <div>
             <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">
-              Password
+              Password <span className="text-red-500">*</span>
             </label>
             <div className="relative">
               <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />

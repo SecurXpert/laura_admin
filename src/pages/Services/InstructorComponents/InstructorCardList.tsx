@@ -33,38 +33,55 @@ export default function InstructorCardList({ loading, instructors, onDelete }: P
             className="bg-[#FFFFFFCC] rounded-[18px] p-4 sm:p-6 border border-[#ECECEC] shadow-[0_4px_20px_rgba(0,0,0,0.04)] hover:shadow-[0_6px_24px_rgba(0,0,0,0.08)] transition-all duration-300 flex flex-col justify-between min-h-[200px] sm:min-h-[210px] min-w-0 w-full"
           >
             {/* TOP SECTION */}
-            <div className="flex items-start gap-3 sm:gap-4 w-full min-w-0">
+            <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4 w-full min-w-0">
               {/* AVATAR */}
-              <div className="relative flex-shrink-0">
-                <div className="w-[48px] h-[48px] sm:w-[58px] sm:h-[58px] rounded-full bg-gradient-to-br from-[#6A5BFF] to-[#8F4DFF] flex items-center justify-center text-white font-semibold text-xl sm:text-2xl leading-none uppercase shadow-md border-[2px] sm:border-[3px] border-white">
-                  {inst.name
-                    ?.split(" ")
-                    ?.slice(0, 2)
-                    ?.map((n) => n[0])
-                    ?.join("")
-                    ?.toUpperCase()}
-                </div>
+              <div className="relative flex-shrink-0 self-start">
+                {inst.profile_picture ? (
+                  <img
+                    src={inst.profile_picture}
+                    alt={inst.name}
+                    className="w-[48px] h-[48px] sm:w-[58px] sm:h-[58px] rounded-full object-cover shadow-md border-[2px] sm:border-[3px] border-white"
+                  />
+                ) : (
+                  <div className="w-[48px] h-[48px] sm:w-[58px] sm:h-[58px] rounded-full bg-gradient-to-br from-[#6A5BFF] to-[#8F4DFF] flex items-center justify-center text-white font-semibold text-xl sm:text-2xl leading-none uppercase shadow-md border-[2px] sm:border-[3px] border-white">
+                    {inst.name
+                      ?.split(" ")
+                      ?.slice(0, 2)
+                      ?.map((n) => n[0])
+                      ?.join("")
+                      ?.toUpperCase()}
+                  </div>
+                )}
                 {/* ONLINE DOT */}
                 <div className="absolute bottom-[2px] right-[2px] w-[8px] h-[8px] sm:w-[10px] sm:h-[10px] rounded-full bg-[#00D26A] border-2 border-white" />
               </div>
 
-              {/* CONTENT PRESERVING EXACT FONT UTILITIES AS REQUESTED */}
-              <div className="flex-1 min-w-0">
-                {/* NAME + ID */}
-                <h2
-                  title={inst.name}
-                  className="text-[22px] font-[700] text-[#1F2937] leading-tight break-words"
-                >
-                  {inst.name}
-                </h2>
+              {/* CONTENT */}
+              <div className="flex-1 min-w-0 w-full">
+                {/* NAME + RATING */}
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h2
+                    title={inst.name}
+                    className="text-[20px] sm:text-[22px] font-[700] text-[#1F2937] leading-tight break-words"
+                  >
+                    {inst.name}
+                  </h2>
+                 
+                </div>
 
-                {/* BIO */}
-                <p
-                  title={inst.bio}
-                  className="mt-1.5 sm:mt-2 text-[16px] text-[#6B7280] leading-[15px] sm:leading-[17px] line-clamp-3 min-h-[60px] sm:min-h-[66px] break-words"
+                {/* EMAIL */}
+                {inst.email && (
+                  <div className="text-[13px] sm:text-[14px] font-medium text-[#6366F1] mt-0.5 break-all">
+                    {inst.email}
+                  </div>
+                )}
+
+                {/* FULL BIO WITHOUT TRUNCATION */}
+                <div
+                  className="mt-2.5 sm:mt-3 text-[15px] sm:text-[16px] text-[#4B5563] leading-relaxed break-words whitespace-pre-wrap"
                 >
                   {inst.bio || "No bio available"}
-                </p>
+                </div>
               </div>
             </div>
 

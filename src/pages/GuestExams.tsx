@@ -2,9 +2,8 @@ import { useEffect, useState } from "react";
 import api from "@/lib/api";
 import { toast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
-import { FiPlus, FiSearch, FiEdit, FiTrash2, FiEye, FiClock, FiPaperclip } from "react-icons/fi";
+import { FiPlus, FiSearch, FiEdit, FiTrash2, FiEye, FiClock } from "react-icons/fi";
 import CreateGuestExamModal from "./CreateGuestExamModal";
-import AttachGuestQuestionsModal from "./AttachGuestQuestionsModal";
 
 export type GuestExam = {
   id: number;
@@ -25,7 +24,6 @@ const GuestExams = () => {
   const [loading, setLoading] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [examToEdit, setExamToEdit] = useState<GuestExam | null>(null);
-  const [examToAttachQuestions, setExamToAttachQuestions] = useState<GuestExam | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
@@ -202,11 +200,11 @@ const GuestExams = () => {
                 <tbody className="divide-y divide-gray-50 text-sm">
                   {loading ? (
                     <tr>
-                      <td colSpan={11} className="p-8 text-center text-gray-500">Loading exams...</td>
+                      <td colSpan={9} className="p-8 text-center text-gray-500">Loading exams...</td>
                     </tr>
                   ) : filteredExams.length === 0 ? (
                     <tr>
-                      <td colSpan={11} className="p-8 text-center text-gray-500">No exams found</td>
+                      <td colSpan={9} className="p-8 text-center text-gray-500">No exams found</td>
                     </tr>
                   ) : (
                     paginatedExams.map((exam, index) => {
@@ -225,7 +223,6 @@ const GuestExams = () => {
                           <td className="p-4 text-gray-600 flex items-center gap-1.5 mt-1"><FiClock className="text-gray-400" /> {exam.duration} min</td>
                           <td className="p-4 text-gray-600 text-[13px]">{formatDate(exam.window_start)}</td>
                           <td className="p-4 text-gray-600 text-[13px]">{formatDate(exam.window_end)}</td>
-                         
                           <td className="p-4 text-center">
                             <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold ${isActive ? 'bg-emerald-50 text-emerald-600' : 'bg-gray-100 text-gray-500'}`}>
                               <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-emerald-500' : 'bg-gray-400'}`}></span>
@@ -235,7 +232,6 @@ const GuestExams = () => {
                           <td className="p-4 pr-6">
                             <div className="flex items-center justify-center gap-3">
                               <button onClick={() => navigate(`/guest-exams/view/${exam.id}`)} className="text-indigo-500 hover:text-indigo-700 transition" title="View"><FiEye className="w-4 h-4" /></button>
-                              
                               <button onClick={() => setExamToEdit(exam)} className="text-orange-500 hover:text-orange-700 transition" title="Edit"><FiEdit className="w-4 h-4" /></button>
                               <button onClick={() => handleDelete(exam.id)} className="text-red-500 hover:text-red-700 transition" title="Delete"><FiTrash2 className="w-4 h-4" /></button>
                             </div>
@@ -248,40 +244,39 @@ const GuestExams = () => {
               </table>
             </div>
 
-            {!loading && filteredExams.length > 0 && (
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 border-t border-gray-100 bg-gray-50/50">
-                <div className="text-xs text-gray-500 font-medium">
-                  Showing {paginatedExams.length > 0 ? (currentPage - 1) * pageSize + 1 : 0}-{Math.min(currentPage * pageSize, filteredExams.length)} of {filteredExams.length} matching exams
-                </div>
-
-                <div className="flex items-center gap-2">
+            {/* PAGINATION */}
+            {totalPages > 1 && (
+              <div className="flex flex-col sm:flex-row justify-between items-center px-6 py-4 border-t border-gray-100 bg-gray-50/50 gap-4">
+                <span className="text-xs text-gray-500 font-medium">
+                  Showing <span className="font-semibold text-gray-700">{(currentPage - 1) * pageSize + 1}</span> to{" "}
+                  <span className="font-semibold text-gray-700">{Math.min(currentPage * pageSize, filteredExams.length)}</span> of{" "}
+                  <span className="font-semibold text-gray-700">{filteredExams.length}</span> entries
+                </span>
+                <div className="flex items-center gap-1.5">
                   <button
                     onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                     disabled={currentPage === 1}
-                    className="px-4 py-2 rounded-full border border-gray-200 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-xs font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition shadow-2xs"
                   >
                     Previous
                   </button>
-
-                  <div className="flex items-center gap-1">
-                    {Array.from({ length: totalPages }).map((_, index) => {
-                      const pageNumber = index + 1;
-                      return (
-                        <button
-                          key={pageNumber}
-                          onClick={() => setCurrentPage(pageNumber)}
-                          className={`w-9 h-9 rounded-full text-sm font-semibold transition ${currentPage === pageNumber ? "bg-[#6366F1] text-white" : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50"}`}
-                        >
-                          {pageNumber}
-                        </button>
-                      );
-                    })}
-                  </div>
-
+                  {[...Array(totalPages)].map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setCurrentPage(i + 1)}
+                      className={`w-7 h-7 rounded-lg text-xs font-bold transition shadow-2xs ${
+                        currentPage === i + 1
+                          ? "bg-[#615fff] text-white"
+                          : "border border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+                      }`}
+                    >
+                      {i + 1}
+                    </button>
+                  ))}
                   <button
                     onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                     disabled={currentPage === totalPages}
-                    className="px-4 py-2 rounded-full border border-gray-200 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-xs font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition shadow-2xs"
                   >
                     Next
                   </button>
@@ -290,7 +285,10 @@ const GuestExams = () => {
             )}
           </div>
         </>
-      ) : (
+      ) : null}
+
+      {/* CREATE / EDIT MODAL */}
+      {isAnyModalOpen && (
         <CreateGuestExamModal
           examToEdit={examToEdit}
           onClose={() => {
@@ -300,17 +298,6 @@ const GuestExams = () => {
           onSuccess={() => {
             setShowCreateModal(false);
             setExamToEdit(null);
-            fetchExams();
-          }}
-        />
-      )}
-
-      {examToAttachQuestions && (
-        <AttachGuestQuestionsModal
-          exam={examToAttachQuestions}
-          onClose={() => setExamToAttachQuestions(null)}
-          onSuccess={() => {
-            setExamToAttachQuestions(null);
             fetchExams();
           }}
         />

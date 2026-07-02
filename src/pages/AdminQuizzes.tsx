@@ -1,25 +1,7 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import {
-  RefreshCw,
-  Plus,
-  BookOpen,
-  Filter,
-  Loader2,
-} from "lucide-react";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { toast } from '@/components/ui/use-toast';
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { BookOpen, Loader2 } from "lucide-react";
+import { toast } from "@/components/ui/use-toast";
 
 import AddAdminQuestionModal from "./AddAdminQuestionModal";
 import BulkUploadAdminQuizModal from "./BulkUploadAdminQuizModal";
@@ -27,8 +9,13 @@ import CreateAdminQuizForm, { Quiz } from "./CreateAdminQuizForm";
 import { QuizStats } from "./AdminQuizComponents/QuizStats";
 import { QuizCard } from "./AdminQuizComponents/QuizCard";
 import { ViewQuestions } from "./AdminQuizComponents/ViewQuestions";
+import { AdminQuizHeader } from "./AdminQuizComponents/AdminQuizHeader";
+import { AdminQuizFilters } from "./AdminQuizComponents/AdminQuizFilters";
+import { AdminQuizPagination } from "./AdminQuizComponents/AdminQuizPagination";
+import { AdminQuizDeleteDialog } from "./AdminQuizComponents/AdminQuizDeleteDialog";
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://lauratek.in:8000';
+const BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "https://lauratek.in:8000";
 
 export default function AdminQuizzes() {
   const navigate = useNavigate();
@@ -44,7 +31,9 @@ export default function AdminQuizzes() {
   const itemsPerPage = 6;
 
   // Form visibility
-  const [activeForm, setActiveForm] = useState<'none' | 'quiz' | 'add-question' | 'bulk-upload' | 'view-questions'>('none');
+  const [activeForm, setActiveForm] = useState<
+    "none" | "quiz" | "add-question" | "bulk-upload" | "view-questions"
+  >("none");
 
   // Viewing quiz questions states
   const [viewingQuiz, setViewingQuiz] = useState<Quiz | null>(null);
@@ -58,20 +47,26 @@ export default function AdminQuizzes() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [selectedQuiz, setSelectedQuiz] = useState("all");
-  const [questionCounts, setQuestionCounts] = useState<{ [key: number]: number }>({});
-  const [analytics, setAnalytics] = useState({ total_attempts: 0, average_score: 0 });
+  const [questionCounts, setQuestionCounts] = useState<{
+    [key: number]: number;
+  }>({});
+  const [analytics, setAnalytics] = useState({
+    total_attempts: 0,
+    average_score: 0,
+  });
   const [totalQuizzes, setTotalQuizzes] = useState(0);
 
   const getAuthHeaders = () => {
-    const token = localStorage.getItem('access_token');
+    const token = localStorage.getItem("access_token");
     return {
-      Authorization: token ? `Bearer ${token}` : '',
+      Authorization: token ? `Bearer ${token}` : "",
     };
   };
 
   const filteredQuizzes = quizzes.filter((quiz) => {
-    const matchesSearch =
-      quiz.title.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = quiz.title
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase());
 
     const matchesStatus =
       statusFilter === "all" || quiz.status === statusFilter;
@@ -88,7 +83,7 @@ export default function AdminQuizzes() {
 
   const fetchQuizzes = async () => {
     setLoading(true);
-    const quizIdFromQuery = searchParams.get('quiz_id');
+    const quizIdFromQuery = searchParams.get("quiz_id");
     let url = `${BASE_URL}/admin/quizzes`;
 
     if (quizIdFromQuery) {
@@ -97,23 +92,23 @@ export default function AdminQuizzes() {
 
     try {
       const res = await fetch(url, {
-        method: 'GET',
+        method: "GET",
         headers: {
           ...getAuthHeaders(),
-          Accept: 'application/json',
+          Accept: "application/json",
         },
       });
 
       if (!res.ok) {
         if (res.status === 401) {
-          localStorage.removeItem('access_token');
+          localStorage.removeItem("access_token");
           toast({
             title: "Session Expired",
             description: "Please login again.",
             variant: "destructive",
             duration: 2000,
           });
-          navigate('/login');
+          navigate("/login");
           return;
         }
         throw new Error(`HTTP ${res.status}`);
@@ -125,16 +120,18 @@ export default function AdminQuizzes() {
         let singleQuiz: Quiz | null = null;
         if (Array.isArray(data)) {
           singleQuiz = data[0] ?? null;
-        } else if (data && typeof data === 'object' && 'id' in data) {
+        } else if (data && typeof data === "object" && "id" in data) {
           singleQuiz = data as Quiz;
         }
         setQuizzes(singleQuiz ? [singleQuiz] : []);
       } else {
-        const sortedData = Array.isArray(data) ? [...data].sort((a, b) => b.id - a.id) : [];
+        const sortedData = Array.isArray(data)
+          ? [...data].sort((a, b) => b.id - a.id)
+          : [];
         setQuizzes(sortedData);
       }
     } catch (err) {
-      console.error('Fetch quizzes failed:', err);
+      console.error("Fetch quizzes failed:", err);
       toast({
         title: "Error",
         description: "Could not load quizzes",
@@ -149,10 +146,10 @@ export default function AdminQuizzes() {
   const fetchAnalytics = async () => {
     try {
       const res = await fetch(`${BASE_URL}/quiz/admin/results/analytics`, {
-        method: 'GET',
+        method: "GET",
         headers: {
           ...getAuthHeaders(),
-          Accept: 'application/json',
+          Accept: "application/json",
         },
       });
       if (res.ok) {
@@ -163,17 +160,17 @@ export default function AdminQuizzes() {
         });
       }
     } catch (err) {
-      console.error('Fetch analytics failed:', err);
+      console.error("Fetch analytics failed:", err);
     }
   };
 
   const fetchQuizCount = async () => {
     try {
       const res = await fetch(`${BASE_URL}/subadmin/quizzes/count`, {
-        method: 'GET',
+        method: "GET",
         headers: {
           ...getAuthHeaders(),
-          Accept: 'application/json',
+          Accept: "application/json",
         },
       });
       if (res.ok) {
@@ -189,7 +186,7 @@ export default function AdminQuizzes() {
         setTotalQuizzes(total);
       }
     } catch (err) {
-      console.error('Fetch quiz count failed:', err);
+      console.error("Fetch quiz count failed:", err);
     }
   };
 
@@ -242,27 +239,29 @@ export default function AdminQuizzes() {
 
     try {
       const res = await fetch(`${BASE_URL}/subadmin/quizzes/${deletingId}`, {
-        method: 'DELETE',
+        method: "DELETE",
         headers: {
           ...getAuthHeaders(),
-          Accept: 'application/json',
+          Accept: "application/json",
         },
       });
 
       if (!res.ok) {
         if (res.status === 401) {
-          localStorage.removeItem('access_token');
+          localStorage.removeItem("access_token");
           toast({
             title: "Session Expired",
             description: "Please login again.",
             variant: "destructive",
             duration: 2000,
           });
-          navigate('/login');
+          navigate("/login");
           return;
         }
         const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.detail || errData.message || 'Failed to delete quiz');
+        throw new Error(
+          errData.detail || errData.message || "Failed to delete quiz"
+        );
       }
 
       toast({
@@ -277,7 +276,7 @@ export default function AdminQuizzes() {
     } catch (err: any) {
       toast({
         title: "Error",
-        description: err.message || 'Could not delete quiz',
+        description: err.message || "Could not delete quiz",
         variant: "destructive",
         duration: 2000,
       });
@@ -285,21 +284,21 @@ export default function AdminQuizzes() {
   };
 
   const toggleQuizForm = () => {
-    setActiveForm(activeForm === 'quiz' ? 'none' : 'quiz');
+    setActiveForm(activeForm === "quiz" ? "none" : "quiz");
   };
 
   const handleViewQuizQuestions = async (quiz: Quiz) => {
     setViewingQuiz(quiz);
     setQuestionsLoading(true);
     setViewingQuestions([]);
-    setActiveForm('view-questions');
+    setActiveForm("view-questions");
 
     try {
-      const token = localStorage.getItem('access_token');
+      const token = localStorage.getItem("access_token");
       const res = await fetch(`${BASE_URL}/subadmin/quiz-view/${quiz.id}`, {
         headers: {
-          Authorization: token ? `Bearer ${token}` : '',
-          Accept: 'application/json',
+          Authorization: token ? `Bearer ${token}` : "",
+          Accept: "application/json",
         },
       });
 
@@ -308,7 +307,7 @@ export default function AdminQuizzes() {
       const questionsArr = Array.isArray(data) ? data : [];
       setViewingQuestions(questionsArr);
     } catch (err) {
-      console.error('Fetch quiz questions failed:', err);
+      console.error("Fetch quiz questions failed:", err);
       toast({
         title: "Error",
         description: "Could not load quiz questions",
@@ -328,100 +327,29 @@ export default function AdminQuizzes() {
 
   return (
     <div className="w-full max-w-7xl mx-auto space-y-6 pb-12">
-      {activeForm === 'none' && (
+      {activeForm === "none" && (
         <>
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-[#1a1744] tracking-tight">Admin Quizzes</h1>
-              <p className="text-md sm:text-md text-[#4B5563] mt-1 font-medium">
-                Create and manage all your admin quizzes
-              </p>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full md:w-auto justify-start md:justify-end">
-              <Button
-                variant="outline"
-                onClick={() => setActiveForm('bulk-upload')}
-                className="w-full sm:w-auto flex items-center justify-center gap-2 border border-slate-200 hover:bg-slate-50 text-sm font-medium shrink-0"
-              >
-                <Plus className="w-4 h-4" />
-                Bulk Upload CSV
-              </Button>
-
-              <Button
-                variant="outline"
-                onClick={() => setActiveForm('add-question')}
-                className="w-full sm:w-auto flex items-center justify-center gap-2 border border-slate-200 hover:bg-slate-50 text-sm font-medium shrink-0"
-              >
-                <Plus className="w-4 h-4" />
-                Add Question
-              </Button>
-
-              <Button
-                onClick={toggleQuizForm}
-                className="w-full sm:w-auto flex items-center justify-center gap-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-md animate-in fade-in duration-200 text-sm font-medium shrink-0"
-              >
-                <Plus className="w-4 h-4" />
-                Create Quiz
-              </Button>
-            </div>
-          </div>
+          <AdminQuizHeader
+            onBulkUpload={() => setActiveForm("bulk-upload")}
+            onAddQuestion={() => setActiveForm("add-question")}
+            onCreateQuiz={toggleQuizForm}
+          />
 
           <QuizStats totalQuizzes={totalQuizzes} analytics={analytics} />
 
-          <div className="p-6 rounded-2xl border shadow-sm mb-8 bg-white">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 rounded-lg bg-gradient-to-r from-purple-500 to-indigo-500 text-white">
-                <Filter className="w-4 h-4" />
-              </div>
-              <div>
-                <h3 className="font-semibold">Filters & Search</h3>
-                <p className="text-sm text-muted-foreground">
-                  Refine your quiz list
-                </p>
-              </div>
-            </div>
-
-            <div className="flex flex-col md:flex-row gap-3">
-              <div className="flex-1 w-full">
-                <Input
-                  placeholder="Search quizzes by name..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full h-10"
-                />
-              </div>
-
-              <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto shrink-0">
-                <select
-                  className="w-full sm:w-48 border rounded-lg px-3 py-2 text-sm bg-white outline-none focus:ring-2 focus:ring-indigo-500 h-10 shrink-0"
-                  value={selectedQuiz}
-                  onChange={(e) => setSelectedQuiz(e.target.value)}
-                >
-                  <option value="all">All Quizzes</option>
-                  {quizzes.map((quiz) => (
-                    <option key={quiz.id} value={quiz.id}>
-                      {quiz.title}
-                    </option>
-                  ))}
-                </select>
-                
-                <Button
-                  variant="outline"
-                  className="w-full sm:w-auto flex items-center justify-center gap-2 h-10 shrink-0"
-                  onClick={() => {
-                    setSearchTerm("");
-                    setStatusFilter("all");
-                    setCategoryFilter("all");
-                    setSelectedQuiz("all");
-                  }}
-                >
-                  <RefreshCw className="w-4 h-4" />
-                  Reset
-                </Button>
-              </div>
-            </div>
-          </div>
+          <AdminQuizFilters
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            selectedQuiz={selectedQuiz}
+            onSelectQuiz={setSelectedQuiz}
+            quizzes={quizzes}
+            onReset={() => {
+              setSearchTerm("");
+              setStatusFilter("all");
+              setCategoryFilter("all");
+              setSelectedQuiz("all");
+            }}
+          />
 
           <div className="flex justify-between items-center mb-6">
             <p className="text-sm text-muted-foreground">
@@ -430,7 +358,9 @@ export default function AdminQuizzes() {
           </div>
 
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-semibold text-slate-800">Your Quizzes</h2>
+            <h2 className="text-2xl font-semibold text-slate-800">
+              Your Quizzes
+            </h2>
           </div>
 
           {loading ? (
@@ -456,102 +386,66 @@ export default function AdminQuizzes() {
                     onView={handleViewQuizQuestions}
                     onEdit={(id) => {
                       setEditingQuizId(id);
-                      setActiveForm('quiz');
+                      setActiveForm("quiz");
                     }}
                     onDelete={setDeletingId}
                   />
                 ))}
               </div>
 
-              {totalPages > 0 && (
-                <div className="flex justify-center items-center gap-2 mt-8 mb-4">
-                  <button
-                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                    disabled={currentPage === 1}
-                    className="px-3 py-1.5 rounded-lg border bg-white text-gray-600 disabled:opacity-50 disabled:pointer-events-none hover:bg-gray-50 transition text-sm font-medium"
-                  >
-                    Previous
-                  </button>
-                  <div className="flex items-center gap-1">
-                    {Array.from({ length: totalPages }).map((_, i) => (
-                      <button
-                        key={i}
-                        onClick={() => setCurrentPage(i + 1)}
-                        className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-medium transition ${
-                          currentPage === i + 1
-                            ? "bg-[#4F46E5] text-white border-[#4F46E5]"
-                            : "bg-white border text-gray-600 hover:bg-gray-50"
-                        }`}
-                      >
-                        {i + 1}
-                      </button>
-                    ))}
-                  </div>
-                  <button
-                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                    disabled={currentPage === totalPages}
-                    className="px-3 py-1.5 rounded-lg border bg-white text-gray-600 disabled:opacity-50 disabled:pointer-events-none hover:bg-gray-50 transition text-sm font-medium"
-                  >
-                    Next
-                  </button>
-                </div>
-              )}
+              <AdminQuizPagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+              />
             </>
           )}
         </>
       )}
 
-      {activeForm === 'quiz' && (
+      {activeForm === "quiz" && (
         <CreateAdminQuizForm
-          editingQuiz={quizzes.find(q => q.id === editingQuizId) || null}
+          editingQuiz={quizzes.find((q) => q.id === editingQuizId) || null}
           onClose={() => {
-            setActiveForm('none');
+            setActiveForm("none");
             setEditingQuizId(null);
           }}
           onSuccess={() => {
-            setActiveForm('none');
+            setActiveForm("none");
             setEditingQuizId(null);
             fetchQuizzes();
             if (!editingQuizId) fetchQuizCount();
           }}
         />
       )}
-      {activeForm === 'view-questions' && (
+      {activeForm === "view-questions" && (
         <ViewQuestions
           quiz={viewingQuiz}
           questions={viewingQuestions}
           loading={questionsLoading}
-          onBack={() => setActiveForm('none')}
+          onBack={() => setActiveForm("none")}
         />
       )}
 
-      {activeForm === 'add-question' && (
-        <AddAdminQuestionModal quizzes={quizzes} onClose={() => setActiveForm('none')} />
+      {activeForm === "add-question" && (
+        <AddAdminQuestionModal
+          quizzes={quizzes}
+          onClose={() => setActiveForm("none")}
+        />
       )}
 
-      {activeForm === 'bulk-upload' && (
-        <BulkUploadAdminQuizModal quizzes={quizzes} onClose={() => setActiveForm('none')} />
+      {activeForm === "bulk-upload" && (
+        <BulkUploadAdminQuizModal
+          quizzes={quizzes}
+          onClose={() => setActiveForm("none")}
+        />
       )}
 
-      <AlertDialog open={!!deletingId} onOpenChange={() => setDeletingId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Quiz?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. All questions belonging to this quiz will also be deleted.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteQuiz}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <AdminQuizDeleteDialog
+        deletingId={deletingId}
+        onClose={() => setDeletingId(null)}
+        onConfirmDelete={handleDeleteQuiz}
+      />
     </div>
   );
 }
