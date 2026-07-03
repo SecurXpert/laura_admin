@@ -56,7 +56,8 @@ export default function GuestDashboardQuizzes() {
       setCurrentPage(1);
     } catch (err: any) {
       console.error("Error fetching guest exam results:", err);
-      setError(err.response?.data?.detail || err.message || "Failed to load guest exam results");
+      const errDetail = err.response?.data?.detail || err.message || "Failed to load guest exam results";
+      setError(typeof errDetail === "object" ? JSON.stringify(errDetail) : String(errDetail));
     } finally {
       setLoading(false);
     }
@@ -80,12 +81,12 @@ export default function GuestDashboardQuizzes() {
   return (
     <div className="mt-4 space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center bg-gray-50/80 p-4 rounded-xl border border-gray-100 shadow-sm">
+      {/* <div className="flex justify-between items-center bg-gray-50/80 p-4 rounded-xl border border-gray-100 shadow-sm">
         <div>
           <h2 className="text-base font-semibold text-gray-800">Guest Exam Results</h2>
           <p className="text-xs text-gray-500 mt-0.5">View examination performance for guest candidates</p>
         </div>
-      </div>
+      </div> */}
 
       {loading ? (
         renderSkeleton()
@@ -104,20 +105,84 @@ export default function GuestDashboardQuizzes() {
           <table className="w-full bg-white text-left">
             <thead className="bg-gray-50/80 border-b border-gray-100 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
               <tr>
-                <th className="px-4 py-3.5">Candidate / Guest</th>
+                <th className="px-4 py-3.5"> Guest Name</th>
                 <th className="px-4 py-3.5">Exam Title</th>
-                <th className="px-4 py-3.5">Score</th>
-                <th className="px-4 py-3.5">Time Taken</th>
-                <th className="px-4 py-3.5">Status</th>
-                <th className="px-4 py-3.5">Submitted</th>
+                <th className="px-4 py-3.5">Total score </th>
+                <th className="px-4 py-3.5">Percentage</th>
+                <th className="px-4 py-3.5">Submitted At</th>
               </tr>
             </thead>
 
             <tbody className="divide-y divide-gray-100 text-sm text-gray-700">
               {paginatedResults.map((result, index) => {
-                const displayName = result.candidate_name || result.name || `Guest #${result.guest_id || 'N/A'}`;
-                const examName = result.exam_title || result.title || `Exam #${result.exam_id || 'N/A'}`;
+                const formatVal = (val: any): string | number => {
+                  if (val === null || val === undefined) return "—";
+                  if (typeof val === "object") return JSON.stringify(val);
+                  return val;
+                };
+
+                const extractMetrics = (res: any) => {
+                  let totalQ = Number(res.total_questions) || 0;
+                  let earnedScore: number | string = "—";
+                  let percentageStr: string = "—";
+
+                  if (Array.isArray(res.score)) {
+                    if (totalQ === 0) totalQ = res.score.length;
+                    if (res.score.length > 0) {
+                      let sumScore = 0;
+                      let sumPct = 0;
+                      res.score.forEach((item: any) => {
+                        if (item && typeof item === "object") {
+                          if (item.score !== undefined && item.score !== null) {
+                            sumScore += Number(item.score) || 0;
+                          } else if (item.percentage !== undefined && item.percentage !== null) {
+                            sumScore += (Number(item.percentage) || 0) / 100;
+                          }
+                          sumPct += Number(item.percentage) || 0;
+                        } else if (typeof item === "number") {
+                          sumScore += item;
+                        }
+                      });
+                      earnedScore = Number.isInteger(sumScore) ? sumScore : Number(sumScore.toFixed(1));
+                      percentageStr = `${Math.round(sumPct / res.score.length)}%`;
+                    } else {
+                      earnedScore = 0;
+                      percentageStr = "0%";
+                    }
+                  } else if (res.score && typeof res.score === "object") {
+                    if (res.score.score !== undefined) earnedScore = res.score.score;
+                    if (res.score.percentage !== undefined) percentageStr = `${res.score.percentage}%`;
+                  } else if (res.score !== undefined && res.score !== null) {
+                    earnedScore = res.score;
+                  }
+
+                  if (percentageStr === "—" && res.percentage !== undefined && res.percentage !== null) {
+                    percentageStr = `${res.percentage}%`;
+                  }
+                  if (percentageStr === "—" && typeof earnedScore === "number" && totalQ > 0) {
+                    percentageStr = `${Math.round((earnedScore / totalQ) * 100)}%`;
+                  }
+
+                  let totalDisplay = "—";
+                  if (res.total !== undefined && res.total !== null) {
+                    totalDisplay = `${res.total}`;
+                  } else if (earnedScore !== "—" && totalQ > 0) {
+                    totalDisplay = `${earnedScore} / ${totalQ}`;
+                  } else if (earnedScore !== "—") {
+                    totalDisplay = `${earnedScore}`;
+                  } else if (totalQ > 0) {
+                    totalDisplay = `${totalQ}`;
+                  }
+
+                  return { totalDisplay, percentageDisplay: percentageStr };
+                };
+
+                const rawName = result.guest_name || result.candidate_name || result.name;
+                const displayName = rawName ? (typeof rawName === "object" ? JSON.stringify(rawName) : String(rawName)) : `Guest #${formatVal(result.guest_id) || 'N/A'}`;
+                const rawExam = result.exam_title || result.title;
+                const examName = rawExam ? (typeof rawExam === "object" ? JSON.stringify(rawExam) : String(rawExam)) : `Exam #${formatVal(result.exam_id) || 'N/A'}`;
                 const submittedDate = result.submitted_at || result.submited_at || result.created_at;
+                const { totalDisplay, percentageDisplay } = extractMetrics(result);
                 
                 const initials = displayName
                   .replace(/[^a-zA-Z0-9 ]/g, "")
@@ -131,46 +196,31 @@ export default function GuestDashboardQuizzes() {
                 return (
                   <tr key={result.id ?? index} className="hover:bg-gray-50/50 transition">
                     <td className="px-4 py-4 flex items-center gap-3">
-                      <div className="h-9 w-9 rounded-full flex items-center justify-center text-white text-xs font-semibold shadow-sm"
+                      <div className="h-9 w-9 rounded-full flex items-center justify-center text-white text-xs font-semibold shadow-sm flex-shrink-0"
                            style={{ background: "linear-gradient(135deg, #7c3aed 0%, #3b82f6 100%)" }}>
                         {initials}
                       </div>
                       <div>
                         <div className="font-medium text-gray-900">{displayName}</div>
-                        {result.guest_id && <div className="text-xs text-gray-400">ID: {result.guest_id}</div>}
+                        {/* {result.guest_id && <div className="text-xs text-gray-400">ID: {formatVal(result.guest_id)}</div>} */}
                       </div>
                     </td>
                     <td className="px-4 py-4 font-medium text-gray-800">
                       {examName}
-                      {result.exam_id && <div className="text-xs text-gray-400 font-normal">Exam ID: {result.exam_id}</div>}
+                      {/* {result.exam_id && <div className="text-xs text-gray-400 font-normal">Exam ID: {formatVal(result.exam_id)}</div>} */}
                     </td>
                     <td className="px-4 py-4 font-semibold text-gray-900">
-                      {result.score !== undefined ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-100">
-                          {result.score} {result.total_questions !== undefined ? `/ ${result.total_questions}` : ""}
-                        </span>
-                      ) : (
-                        "—"
-                      )}
-                    </td>
-                    <td className="px-4 py-4 text-gray-600 text-xs">
-                      {result.time_taken !== undefined && result.time_taken > 0 ? (
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-3.5 h-3.5 text-gray-400" />
-                          {result.time_taken}s
-                        </span>
-                      ) : (
-                        "—"
-                      )}
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-100">
+                        {totalDisplay}
+                      </span>
                     </td>
                     <td className="px-4 py-4">
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/60">
-                        <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                        {result.status || result.badge || "Completed"}
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100">
+                        {percentageDisplay}
                       </span>
                     </td>
                     <td className="px-4 py-4 text-xs text-gray-500">
-                      {submittedDate ? new Date(submittedDate).toLocaleString("en-IN", {
+                      {submittedDate && typeof submittedDate === "string" ? new Date(submittedDate).toLocaleString("en-IN", {
                         dateStyle: "medium",
                         timeStyle: "short",
                       }) : "—"}

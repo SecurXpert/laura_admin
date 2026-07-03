@@ -50,7 +50,8 @@ export default function GuestDashboardAttendance() {
         setAttendance(sortedData);
       } catch (err: any) {
         console.error(err);
-        setAttendanceError(err.response?.data?.detail || err.message || "Failed to load attendance records");
+        const errDetail = err.response?.data?.detail || err.message || "Failed to load attendance records";
+        setAttendanceError(typeof errDetail === "object" ? JSON.stringify(errDetail) : String(errDetail));
       } finally {
         setAttendanceLoading(false);
       }

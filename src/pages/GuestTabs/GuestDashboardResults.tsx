@@ -42,7 +42,8 @@ export default function GuestDashboardResults() {
         setResults(sortedData);
       } catch (err: any) {
         console.error(err);
-        setResultsError(err.response?.data?.detail || err.message || "Failed to load quiz results");
+        const errDetail = err.response?.data?.detail || err.message || "Failed to load quiz results";
+        setResultsError(typeof errDetail === "object" ? JSON.stringify(errDetail) : String(errDetail));
       } finally {
         setResultsLoading(false);
       }
@@ -80,8 +81,39 @@ export default function GuestDashboardResults() {
 
             <tbody>
               {results.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((result, index) => {
-                const initials = result.name
-                  ?.split(" ")
+                const formatVal = (val: any): string | number => {
+                  if (val === null || val === undefined) return "—";
+                  if (typeof val === "object") {
+                    if (val.percentage !== undefined && val.score !== undefined) return `${val.score} (${val.percentage}%)`;
+                    if (val.percentage !== undefined) return `${val.percentage}%`;
+                    if (val.score !== undefined) return val.score;
+                    return JSON.stringify(val);
+                  }
+                  return val;
+                };
+
+                const renderScore = (scoreVal: any, totalVal: any) => {
+                  if (scoreVal === null || scoreVal === undefined) return "—";
+                  if (typeof scoreVal === "object") {
+                    if (scoreVal.percentage !== undefined && scoreVal.score !== undefined) {
+                      return `${scoreVal.score}${totalVal !== undefined ? ` / ${formatVal(totalVal)}` : ""} (${scoreVal.percentage}%)`;
+                    }
+                    if (scoreVal.percentage !== undefined) return `${scoreVal.percentage}%`;
+                    if (scoreVal.score !== undefined) {
+                      return `${scoreVal.score}${totalVal !== undefined ? ` / ${formatVal(totalVal)}` : ""}`;
+                    }
+                    return JSON.stringify(scoreVal);
+                  }
+                  return `${scoreVal}${totalVal !== undefined ? `/${formatVal(totalVal)}` : ""}`;
+                };
+
+                const rawName = result.guest_name || result.candidate_name || result.name;
+                const nameStr = rawName ? (typeof rawName === "object" ? JSON.stringify(rawName) : String(rawName)) : `Guest #${result.guest_id || "N/A"}`;
+                const rawTitle = result.exam_title || result.title;
+                const titleStr = rawTitle ? (typeof rawTitle === "object" ? JSON.stringify(rawTitle) : String(rawTitle)) : "Untitled Quiz";
+
+                const initials = nameStr
+                  .split(" ")
                   .map((w) => w[0])
                   .join("")
                   .slice(0, 2)
@@ -100,21 +132,21 @@ export default function GuestDashboardResults() {
                           {initials}
                         </div>
                       </div>
-                      {result.name}
+                      {nameStr}
                     </td>
-                    <td className="px-4 py-4">{result.title}</td>
+                    <td className="px-4 py-4">{titleStr}</td>
                     <td className="px-4 py-4">
-                      {result.score}/{result.total_questions}
+                      {renderScore(result.score, result.total_questions)}
                     </td>
-                    <td className="px-4 py-4">{result.total_questions}</td>
+                    <td className="px-4 py-4">{formatVal(result.total_questions)}</td>
                     <td className="px-4 py-4">
-                      {result.time_taken === 0 ? "—" : `${result.time_taken}s`}
-                    </td>
-                    <td className="px-4 py-4">
-                      {result.badge || "No Badge"}
+                      {result.time_taken === 0 || result.time_taken === undefined ? "—" : `${formatVal(result.time_taken)}s`}
                     </td>
                     <td className="px-4 py-4">
-                      {new Date(result.submitted_at).toLocaleString()}
+                      {formatVal(result.badge || "No Badge")}
+                    </td>
+                    <td className="px-4 py-4">
+                      {result.submitted_at && typeof result.submitted_at === "string" ? new Date(result.submitted_at).toLocaleString() : "—"}
                     </td>
                   </tr>
                 );
@@ -142,11 +174,10 @@ export default function GuestDashboardResults() {
               <button
                 key={i + 1}
                 onClick={() => setCurrentPage(i + 1)}
-                className={`w-8 h-8 rounded text-sm font-medium transition-colors ${
-                  currentPage === i + 1
+                className={`w-8 h-8 rounded text-sm font-medium transition-colors ${currentPage === i + 1
                     ? "bg-blue-600 text-white"
                     : "border border-gray-200 text-gray-700 hover:bg-gray-50"
-                }`}
+                  }`}
               >
                 {i + 1}
               </button>
