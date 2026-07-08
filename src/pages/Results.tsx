@@ -193,8 +193,7 @@ const Results = () => {
               <tr className="border-b border-[#f1f5f9]">
                 <th className="py-5 px-6 text-[12px] font-bold text-[#94a3b8] uppercase tracking-widest">{activeTab === 'exam' ? 'CANDIDATE' : 'STUDENT NAME'}</th>
                 <th className="py-5 px-6 text-[12px] font-bold text-[#94a3b8] uppercase tracking-widest">{activeTab === 'exam' ? 'EXAM TITLE' : 'QUIZ NAME'}</th>
-                <th className="py-5 px-6 text-[12px] font-bold text-[#94a3b8] uppercase tracking-widest">{activeTab === 'exam' ? 'CODING SCORE' : 'SCORE'}</th>
-                {activeTab === 'exam' && <th className="py-5 px-6 text-[12px] font-bold text-[#94a3b8] uppercase tracking-widest">QUESTIONS</th>}
+                <th className="py-5 px-6 text-[12px] font-bold text-[#94a3b8] uppercase tracking-widest">{activeTab === 'exam' ? 'TOTAL score ' : 'SCORE'}</th>
                 {activeTab === 'exam' && <th className="py-5 px-6 text-[12px] font-bold text-[#94a3b8] uppercase tracking-widest">PERCENTAGE</th>}
                 <th className="py-5 px-6 text-[12px] font-bold text-[#94a3b8] uppercase tracking-widest">SUBMITTED</th>
               </tr>
@@ -203,16 +202,30 @@ const Results = () => {
               {((activeTab === 'exam' && loadingExam) || (activeTab === 'quiz' && loadingQuiz)) ? (
                 [...Array(6)].map((_, i) => (
                   <tr key={i} className="border-b border-[#f8fafc]">
-                    {[...Array(6)].map((_, j) => (
+                    {[...Array(activeTab === 'exam' ? 5 : 4)].map((_, j) => (
                       <td key={j} className="py-6 px-6"><Skeleton className="h-5 w-full rounded" /></td>
                     ))}
                   </tr>
                 ))
               ) : activeTab === 'exam' ? (
                 examResults.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((result, idx) => {
-                  const scoreDisplay = Array.isArray(result.score) ? (result.total || 0) : (result.score || result.total || 0);
-                  const totalQ = result.total_questions || 100;
-                  const percent = totalQ > 0 ? (scoreDisplay / totalQ) * 100 : 0;
+                  const totalDisplay = result.total !== undefined && result.total !== null 
+                    ? result.total 
+                    : (typeof result.score === 'number' ? result.score : 0);
+
+                  let percent = 0;
+                  if (result.percentage !== undefined && result.percentage !== null) {
+                    percent = Number(result.percentage);
+                  } else if (Array.isArray(result.score) && result.score.length > 0) {
+                    const sumPercent = result.score.reduce((acc: number, item: any) => acc + (Number(item?.percentage) || 0), 0);
+                    percent = sumPercent / result.score.length;
+                  } else if (typeof result.score === 'number' && result.total_questions && result.total_questions > 0) {
+                    percent = (result.score / result.total_questions) * 100;
+                  } else if (typeof result.total === 'number' && result.total_questions && result.total_questions > 0) {
+                    percent = (result.total / result.total_questions) * 100;
+                  } else if (typeof result.total === 'number') {
+                    percent = Number(result.total);
+                  }
 
                   const name = result.candidate_name || `Candidate ${result.candidate_id || result.id || idx}`;
                   const cid = result.candidate_id || result.id || 'N/A';
@@ -234,21 +247,15 @@ const Results = () => {
                       </td>
                       <td className="py-4 px-6 text-[15px] font-bold text-[#334155]">{result.exam_title || result.exam_id || result.id || '-'}</td>
                       <td className="py-4 px-6">
-                        <div className="flex items-center gap-3">
-                          <div className="w-12 h-1.5 bg-[#f1f5f9] rounded-full overflow-hidden">
-                            <div className="h-full bg-[#3b82f6] rounded-full" style={{ width: `${Math.min(100, (scoreDisplay / totalQ) * 100)}%` }}></div>
-                          </div>
-                          <div className="text-[14px] font-bold text-[#334155] tracking-tight">{scoreDisplay}<span className="text-[#94a3b8]">/100</span></div>
+                        <div className="text-[15px] font-bold text-[#0f172a]">
+                          {typeof totalDisplay === 'number' && !Number.isInteger(totalDisplay) ? totalDisplay.toFixed(1) : totalDisplay}
                         </div>
-                      </td>
-                      <td className="py-4 px-6 text-[14px] font-bold text-[#0f172a]">
-                        {scoreDisplay}<span className="text-[#94a3b8]">/{totalQ}</span>
                       </td>
                       <td className="py-4 px-6">
                         <div className="flex flex-col gap-1.5 w-fit">
                           <div className={`text-[14px] font-bold tracking-tight ${percent >= 50 ? 'text-[#10b981]' : 'text-[#ef4444]'}`}>{percent.toFixed(1)}%</div>
-                          <div className="w-12 h-[3px] rounded-full overflow-hidden bg-[#f1f5f9]">
-                            <div className={`h-full ${percent >= 50 ? 'bg-[#10b981]' : 'bg-[#ef4444]'}`} style={{ width: `${percent}%` }}></div>
+                          <div className="w-16 h-[4px] rounded-full overflow-hidden bg-[#f1f5f9]">
+                            <div className={`h-full ${percent >= 50 ? 'bg-[#10b981]' : 'bg-[#ef4444]'}`} style={{ width: `${Math.min(100, Math.max(0, percent))}%` }}></div>
                           </div>
                         </div>
                       </td>

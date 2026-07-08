@@ -56,6 +56,7 @@ const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
     toast({
       title: "Signed Out",
       description: "You have been successfully signed out.",
+      className: "bg-red-600 text-white",
     });
     navigate("/", { replace: true });
   };
