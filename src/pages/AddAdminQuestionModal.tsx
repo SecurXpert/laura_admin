@@ -27,7 +27,7 @@ const AddAdminQuestionModal: React.FC<AddQuestionModalProps> = ({ quizzes, onClo
   const [optionD, setOptionD] = useState("");
   const [correctOption, setCorrectOption] = useState("");
   const [loading, setLoading] = useState(false);
-  const [trainers, setTrainers] = useState<{id: number, name: string}[]>([]);
+  const [trainers, setTrainers] = useState<{ id: number, name: string }[]>([]);
 
   React.useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
@@ -192,7 +192,7 @@ const AddAdminQuestionModal: React.FC<AddQuestionModalProps> = ({ quizzes, onClo
               <div>
                 <div className="flex items-center justify-between">
                   <Label>Question <span className="text-red-500">*</span></Label>
-                  
+
                 </div>
                 <Textarea
                   placeholder="Enter your question here ..."

@@ -325,39 +325,30 @@ const Results = () => {
 
           {/* Pagination */}
           {((activeTab === 'exam' && examResults.length > 0) || (activeTab === 'quiz' && quizResults.length > 0)) && (
-            <div className="flex flex-col sm:flex-row items-center justify-between p-6">
-              <p className="text-[14px] font-medium text-[#64748b] mb-4 sm:mb-0">
-                Showing <span className="font-bold text-[#0f172a]">{(currentPage - 1) * itemsPerPage + 1}</span> to <span className="font-bold text-[#0f172a]">{Math.min(currentPage * itemsPerPage, activeTab === 'exam' ? examResults.length : quizResults.length)}</span> of <span className="font-bold text-[#0f172a]">{activeTab === 'exam' ? examResults.length : quizResults.length}</span> results
-              </p>
+            <div className="flex flex-col sm:flex-row items-center justify-between p-6 border-t border-[#f1f5f9] gap-4">
+              <div className="text-[13px] font-medium text-[#6B7280]">
+                Showing {(currentPage - 1) * itemsPerPage + 1}-{Math.min(currentPage * itemsPerPage, activeTab === 'exam' ? examResults.length : quizResults.length)} of {activeTab === 'exam' ? examResults.length : quizResults.length}
+              </div>
 
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
-                  className="w-8 h-8 flex items-center justify-center rounded-lg border border-[#e2e8f0] text-[#64748b] hover:bg-[#f8fafc] disabled:opacity-50 transition"
+                  className="px-4 py-1.5 rounded-full border border-gray-200 text-[#374151] text-[13px] font-semibold hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-white h-[34px] flex items-center justify-center"
                 >
-                  <ChevronLeft className="w-4 h-4" />
+                  Previous
                 </button>
 
-                {Array.from({ length: Math.ceil((activeTab === 'exam' ? examResults.length : quizResults.length) / itemsPerPage) }).map((_, i) => (
-                  <button
-                    key={i + 1}
-                    onClick={() => setCurrentPage(i + 1)}
-                    className={`w-8 h-8 flex items-center justify-center rounded-lg text-[13px] font-bold transition-all ${currentPage === i + 1
-                        ? "bg-[#5f5ce6] text-white shadow-sm"
-                        : "border border-[#e2e8f0] text-[#64748b] hover:bg-[#f8fafc]"
-                      }`}
-                  >
-                    {i + 1}
-                  </button>
-                ))}
+                <div className="w-[34px] h-[34px] flex items-center justify-center rounded-full text-[13px] font-bold bg-[#6366F1] text-white shadow-[0_4px_10px_rgba(99,102,241,0.3)] border border-transparent">
+                  {currentPage}
+                </div>
 
                 <button
                   onClick={() => setCurrentPage(p => Math.min(Math.ceil((activeTab === 'exam' ? examResults.length : quizResults.length) / itemsPerPage), p + 1))}
                   disabled={currentPage === Math.ceil((activeTab === 'exam' ? examResults.length : quizResults.length) / itemsPerPage)}
-                  className="w-8 h-8 flex items-center justify-center rounded-lg border border-[#e2e8f0] text-[#64748b] hover:bg-[#f8fafc] disabled:opacity-50 transition"
+                  className="px-4 py-1.5 rounded-full border border-gray-200 text-[#374151] text-[13px] font-semibold hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-white h-[34px] flex items-center justify-center"
                 >
-                  <ChevronRight className="w-4 h-4" />
+                  Next
                 </button>
               </div>
             </div>

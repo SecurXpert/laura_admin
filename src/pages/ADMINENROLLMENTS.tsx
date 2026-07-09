@@ -134,21 +134,6 @@ const EnrollmentAdminView = () => {
   const startRange = totalItems === 0 ? 0 : (page - 1) * pageSize + 1;
   const endRange = Math.min(page * pageSize, totalItems);
 
-  const getPageNumbers = () => {
-    const pages = [];
-    let startPage = Math.max(1, page - 1);
-    let endPage = Math.min(totalPages, startPage + 2);
-
-    if (endPage - startPage < 2) {
-      startPage = Math.max(1, endPage - 2);
-    }
-
-    for (let i = startPage; i <= endPage; i++) {
-      pages.push(i);
-    }
-    return pages;
-  };
-
   return (
     <div className="space-y-6 w-full max-w-7xl mx-auto pb-12">
 
@@ -228,9 +213,7 @@ const EnrollmentAdminView = () => {
                       <span className="font-bold text-[#1F2937] text-[16px] leading-snug whitespace-nowrap">
                         {item.name}
                       </span>
-                      <span className="text-[16px] text-[#6B7280] font-medium mt-1">
-                        LD-2024-{String(item.id).padStart(3, "0")}
-                      </span>
+                      
                     </div>
                   </TableCell>
 
@@ -292,39 +275,28 @@ const EnrollmentAdminView = () => {
         </div>
 
         {/* PAGINATION SECTION */}
-        <div className="flex flex-wrap items-center justify-start gap-x-8 gap-y-4 px-6 py-5 border-t border-slate-100 bg-white">
-          <p className="text-base sm:text-lg text-slate-500 font-medium whitespace-nowrap">
+        <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-5 bg-white border-t border-[#F3F4F6] rounded-b-[24px] gap-6">
+          <div className="text-[13px] font-medium text-[#6B7280]">
             Showing {startRange}-{endRange} of {totalItems}
-          </p>
+          </div>
 
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2">
             <button
               disabled={page === 1}
               onClick={() => setPage((p) => Math.max(p - 1, 1))}
-              className="px-4 py-2.5 text-base sm:text-lg font-medium text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:hover:bg-white transition-all duration-150"
+              className="px-4 py-1.5 rounded-full border border-gray-200 text-[#374151] text-[13px] font-semibold hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-white h-[34px] flex items-center justify-center"
             >
               Previous
             </button>
 
-            <div className="flex items-center gap-1.5">
-              {getPageNumbers().map((i) => (
-                <button
-                  key={i}
-                  onClick={() => setPage(i)}
-                  className={`w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center text-base sm:text-lg font-semibold rounded-full transition-all duration-150 ${page === i
-                    ? "bg-[#5E5ADB] text-white shadow-sm"
-                    : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50"
-                    }`}
-                >
-                  {i}
-                </button>
-              ))}
+            <div className="w-[34px] h-[34px] flex items-center justify-center rounded-full text-[13px] font-bold bg-[#5E5ADB] text-white shadow-[0_4px_10px_rgba(94,90,219,0.3)] border border-transparent">
+              {page}
             </div>
 
             <button
               disabled={page === totalPages || totalPages === 0}
               onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
-              className="px-4 py-2.5 text-base sm:text-lg font-medium text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:hover:bg-white transition-all duration-150"
+              className="px-4 py-1.5 rounded-full border border-gray-200 text-[#374151] text-[13px] font-semibold hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-white h-[34px] flex items-center justify-center"
             >
               Next
             </button>

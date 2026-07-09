@@ -244,38 +244,28 @@ const StudentExams = () => {
             </div>
 
             {/* PAGINATION */}
-            {totalPages > 1 && (
-              <div className="flex flex-col sm:flex-row justify-between items-center px-6 py-4 border-t border-gray-100 bg-gray-50/50 gap-4">
-                <span className="text-xs text-gray-500 font-medium">
-                  Showing <span className="font-semibold text-gray-700">{(currentPage - 1) * pageSize + 1}</span> to{" "}
-                  <span className="font-semibold text-gray-700">{Math.min(currentPage * pageSize, filteredExams.length)}</span> of{" "}
-                  <span className="font-semibold text-gray-700">{filteredExams.length}</span> entries
-                </span>
-                <div className="flex items-center gap-1.5">
+            {!loading && filteredExams.length > 0 && (
+              <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-5 border-t border-gray-100 gap-4">
+                <div className="text-[13px] font-medium text-[#6B7280]">
+                  Showing {(currentPage - 1) * pageSize + 1}-{Math.min(currentPage * pageSize, filteredExams.length)} of {filteredExams.length}
+                </div>
+                <div className="flex items-center gap-2">
                   <button
                     onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                     disabled={currentPage === 1}
-                    className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-xs font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition shadow-2xs"
+                    className="px-4 py-1.5 rounded-full border border-gray-200 text-[#374151] text-[13px] font-semibold hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-white h-[34px] flex items-center justify-center"
                   >
                     Previous
                   </button>
-                  {[...Array(totalPages)].map((_, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setCurrentPage(i + 1)}
-                      className={`w-7 h-7 rounded-lg text-xs font-bold transition shadow-2xs ${
-                        currentPage === i + 1
-                          ? "bg-[#615fff] text-white"
-                          : "border border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
-                      }`}
-                    >
-                      {i + 1}
-                    </button>
-                  ))}
+
+                  <div className="w-[34px] h-[34px] flex items-center justify-center rounded-full text-[13px] font-bold bg-[#6366F1] text-white shadow-[0_4px_10px_rgba(99,102,241,0.3)] border border-transparent">
+                    {currentPage}
+                  </div>
+
                   <button
                     onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                     disabled={currentPage === totalPages}
-                    className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-xs font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white transition shadow-2xs"
+                    className="px-4 py-1.5 rounded-full border border-gray-200 text-[#374151] text-[13px] font-semibold hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-white h-[34px] flex items-center justify-center"
                   >
                     Next
                   </button>

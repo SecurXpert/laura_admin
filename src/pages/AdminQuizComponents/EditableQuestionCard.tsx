@@ -28,13 +28,13 @@ export const EditableQuestionCard: React.FC<EditableQuestionCardProps> = ({ ques
     try {
       setLoading(true);
       const token = localStorage.getItem("access_token");
-      
+
       const formData = new FormData();
       formData.append("option_value", newValue);
 
       const res = await fetch(`${API_BASE}/subadmin/questions/${question.id}/options/${optionKey}`, {
         method: "PATCH",
-        headers: { 
+        headers: {
           Authorization: `Bearer ${token}`
         },
         body: formData
@@ -62,7 +62,7 @@ export const EditableQuestionCard: React.FC<EditableQuestionCardProps> = ({ ques
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!res.ok) throw new Error("Failed to delete option");
-      
+
       if (optionKey === 'a') setOptionA('');
       if (optionKey === 'b') setOptionB('');
       if (optionKey === 'c') setOptionC('');
@@ -114,7 +114,7 @@ export const EditableQuestionCard: React.FC<EditableQuestionCardProps> = ({ ques
           patchFormData.append("option_value", newVal);
           await fetch(`${API_BASE}/subadmin/questions/${question.id}/options/${key}`, {
             method: "PATCH",
-            headers: { 
+            headers: {
               Authorization: `Bearer ${token}`
             },
             body: patchFormData
@@ -139,7 +139,7 @@ export const EditableQuestionCard: React.FC<EditableQuestionCardProps> = ({ ques
 
   const handleDelete = async () => {
     if (!window.confirm("Are you sure you want to delete this question?")) return;
-    
+
     setLoading(true);
     try {
       const token = localStorage.getItem("access_token");
@@ -231,7 +231,7 @@ export const EditableQuestionCard: React.FC<EditableQuestionCardProps> = ({ ques
             <div className="flex justify-between items-center mb-1">
               <label className="text-sm font-medium text-gray-700">{opt.label}</label>
               <div className="flex gap-1 transition-opacity">
-                <button 
+                <button
                   onClick={() => handleSaveOption(opt.key, opt.val)}
                   disabled={loading}
                   title={`Save ${opt.label} only`}
@@ -239,7 +239,7 @@ export const EditableQuestionCard: React.FC<EditableQuestionCardProps> = ({ ques
                 >
                   <Save className="w-3.5 h-3.5" />
                 </button>
-                <button 
+                <button
                   onClick={() => handleDeleteOption(opt.key)}
                   disabled={loading}
                   title={`Delete ${opt.label}`}

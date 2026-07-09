@@ -581,35 +581,27 @@ const Reviews: React.FC = () => {
 
         {/* Pagination Controls */}
         {!loading && filteredReviews.length > 0 && (
-          <div className="flex items-center justify-between px-6 py-5 border-t border-gray-100">
-            <span className="text-[14px] text-gray-500">
+          <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-5 border-t border-gray-100 gap-4">
+            <div className="text-[13px] font-medium text-[#6B7280]">
               Showing {indexOfFirstItem + 1}-{Math.min(indexOfLastItem, filteredReviews.length)} of {filteredReviews.length}
-            </span>
+            </div>
             <div className="flex items-center gap-2">
               <button
                 disabled={currentPage === 1}
                 onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                className="border border-gray-200 rounded-full px-5 py-2 text-[14px] font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:hover:bg-white transition-all"
+                className="px-4 py-1.5 rounded-full border border-gray-200 text-[#374151] text-[13px] font-semibold hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-white h-[34px] flex items-center justify-center"
               >
                 Previous
               </button>
-              {Array.from({ length: Math.min(totalPages, 3) }, (_, i) => i + 1).map((page) => (
-                <button
-                  key={page}
-                  onClick={() => setCurrentPage(page)}
-                  className={
-                    page === currentPage
-                      ? "w-9 h-9 rounded-full bg-[#8B5CF6] text-white flex items-center justify-center text-[14px] font-medium transition-all shadow-sm"
-                      : "w-9 h-9 rounded-full border border-gray-200 text-gray-700 flex items-center justify-center text-[14px] font-medium hover:bg-gray-50 transition-all"
-                  }
-                >
-                  {page}
-                </button>
-              ))}
+
+              <div className="w-[34px] h-[34px] flex items-center justify-center rounded-full text-[13px] font-bold bg-[#6366F1] text-white shadow-[0_4px_10px_rgba(99,102,241,0.3)] border border-transparent">
+                {currentPage}
+              </div>
+
               <button
                 disabled={currentPage === totalPages}
                 onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                className="border border-gray-200 rounded-full px-5 py-2 text-[14px] font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:hover:bg-white transition-all"
+                className="px-4 py-1.5 rounded-full border border-gray-200 text-[#374151] text-[13px] font-semibold hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-white h-[34px] flex items-center justify-center"
               >
                 Next
               </button>

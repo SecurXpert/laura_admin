@@ -82,7 +82,7 @@ const BulkUploadAdminQuizModal: React.FC<BulkUploadQuestionModalProps> = ({ quiz
 
   return (
     <div className="w-full space-y-6 relative">
-      <div className="sticky top-[64px] z-40 bg-[#F8F9FB]/95 backdrop-blur-sm py-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 -mt-4 px-2 rounded-b-lg">
+      <div className="sticky top-[64px] z-40 bg-[#F8F9FB]/95 backdrop-blur-md py-4 px-4 sm:px-6 -mx-4 sm:-mx-6 -mt-3 sm:-mt-4 border-b border-slate-200/80 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 transition-all">
         <div>
           <button
             onClick={onClose}
@@ -154,7 +154,7 @@ const BulkUploadAdminQuizModal: React.FC<BulkUploadQuestionModalProps> = ({ quiz
           </Card>
         </div>
 
-        <div className="bg-gradient-to-br from-[#EEF2FF] to-[#F5F3FF] rounded-2xl p-6 border h-fit lg:sticky lg:top-6">
+        <div className="bg-gradient-to-br from-[#EEF2FF] to-[#F5F3FF] rounded-2xl p-6 border h-fit lg:sticky lg:top-[160px] z-10">
           <div className="flex items-center gap-3 mb-5">
             <div className="bg-indigo-500 text-white p-2.5 rounded-lg shadow-sm">
               <Info className="w-5 h-5" />

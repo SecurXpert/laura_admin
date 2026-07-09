@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import api from "@/lib/api";import { GuestQuiz } from "./GuestQuizzes";
+import api from "@/lib/api"; import { GuestQuiz } from "./GuestQuizzes";
 import { FiUpload, FiInfo, FiArrowLeft } from "react-icons/fi";
 interface BulkUploadGuestQuizModalProps {
   quizzes: GuestQuiz[];
@@ -36,31 +36,33 @@ const BulkUploadGuestQuizModal: React.FC<BulkUploadGuestQuizModalProps> = ({
   };
 
   return (
-    <div className="w-full pb-8 relative">
+    <div className="w-full space-y-6 relative">
       {/* HEADER */}
-      <div className="sticky top-[64px] z-40 bg-[#F8F9FB]/95 backdrop-blur-sm py-4 border-b border-slate-200 mb-6 -mt-4 px-2 rounded-b-lg">
-        <button onClick={onClose} className="text-gray-500 text-sm flex items-center gap-2 mb-4 hover:text-gray-700">
-          <FiArrowLeft /> Back to Guest Quizzes
-        </button>
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-800">
-              Bulk Upload CSV
-            </h1>
-            <p className="text-gray-500 text-xs sm:text-sm mt-1">
-              Upload multiple questions via CSV file
-            </p>
-          </div>
+      <div className="sticky top-[64px] z-40 bg-[#F8F9FB]/95 backdrop-blur-md py-4 px-4 sm:px-6 -mx-4 sm:-mx-6 -mt-3 sm:-mt-4 border-b border-slate-200/80 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 transition-all">
+        <div>
+          <button
+            onClick={onClose}
+            className="flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors mb-2 cursor-pointer"
+          >
+            <FiArrowLeft className="w-4 h-4" />
+            Back to Guest Quizzes
+          </button>
+          <h1 className="text-3xl sm:text-4xl font-semibold text-gray-900">
+            Bulk Upload CSV
+          </h1>
+          <p className="text-md text-gray-600 mt-1">
+            Upload multiple questions via CSV file
+          </p>
+        </div>
 
-          <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-            <button
-              onClick={handleBulkUpload}
-              className="flex items-center gap-2 px-6 py-2.5 rounded-lg text-white font-semibold text-sm bg-gradient-to-r from-[#615FFF] to-[#AD46FF] hover:opacity-90 shadow-sm transition-all"
-            >
-              <FiUpload className="text-lg" />
-              <span>Upload</span>
-            </button>
-          </div>
+        <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+          <button
+            onClick={handleBulkUpload}
+            className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-white font-medium text-sm bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-md transition-all w-full sm:w-auto cursor-pointer"
+          >
+            <FiUpload className="w-4 h-4" />
+            <span>Upload</span>
+          </button>
         </div>
       </div>
 
@@ -111,7 +113,7 @@ const BulkUploadGuestQuizModal: React.FC<BulkUploadGuestQuizModalProps> = ({
         </div>
 
         {/* RIGHT PREVIEW */}
-        <div className="bg-gradient-to-br from-[#EEF2FF] to-[#F5F3FF] rounded-2xl p-6 border h-fit">
+        <div className="bg-gradient-to-br from-[#EEF2FF] to-[#F5F3FF] rounded-2xl p-6 border h-fit lg:sticky lg:top-[160px] z-10">
           <div className="flex items-center gap-3 mb-5">
             <div className="bg-indigo-500 text-white p-2 rounded-lg">
               <svg

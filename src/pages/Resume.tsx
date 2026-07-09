@@ -65,6 +65,8 @@ const ResumesList = () => {
   const [resumes, setResumes] = useState<ResumeData[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedResume, setSelectedResume] = useState<ResumeData | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 8;
 
   const TOKEN_STORAGE_KEY = 'access_token';
   const getToken = () => localStorage.getItem(TOKEN_STORAGE_KEY);
@@ -82,6 +84,7 @@ const ResumesList = () => {
       const res = await api.get('/resumes/', axiosConfig());
       const sortedData = [...(res.data || [])].sort((a: any, b: any) => b.id - a.id);
       setResumes(sortedData);
+      setCurrentPage(1);
     } catch (err) {
       console.error("Failed to fetch resumes:", err);
     } finally {
@@ -94,6 +97,12 @@ const ResumesList = () => {
   }, []);
 
   const getFullName = (r: ResumeData) => `${r.first_name || ''} ${r.last_name || ''}`.trim() || 'Unknown Candidate';
+
+  const totalPages = Math.max(Math.ceil(resumes.length / ITEMS_PER_PAGE), 1);
+  const paginatedResumes = resumes.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   // --- Helpers for Skills Parsing ---
   const getSkillParts = (skillStr: string) => {
@@ -268,75 +277,107 @@ const ResumesList = () => {
           <p className="text-gray-500 mt-2">There are no resumes stored in the database yet.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {resumes.map((resume, idx) => (
-            <div
-              key={idx}
-              className="bg-white p-6 rounded-[24px] border border-gray-200/80 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-lg transition-all flex flex-col justify-between"
-            >
-              <div>
-                {/* Top Row: Avatar icon on left, Purple View button on right */}
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-14 h-14 bg-[#EFF6FF] rounded-2xl flex items-center justify-center text-[#3B82F6] flex-shrink-0 overflow-hidden">
-                    {resume.profile_photo_url ? (
-                      <img
-                        src={resume.profile_photo_url}
-                        alt="Profile"
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <User className="w-6 h-6 stroke-[2.2]" />
-                    )}
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {paginatedResumes.map((resume, idx) => (
+              <div
+                key={idx}
+                className="bg-white p-6 rounded-[24px] border border-gray-200/80 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-lg transition-all flex flex-col justify-between"
+              >
+                <div>
+                  {/* Top Row: Avatar icon on left, Purple View button on right */}
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="w-14 h-14 bg-[#EFF6FF] rounded-2xl flex items-center justify-center text-[#3B82F6] flex-shrink-0 overflow-hidden">
+                      {resume.profile_photo_url ? (
+                        <img
+                          src={resume.profile_photo_url}
+                          alt="Profile"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <User className="w-6 h-6 stroke-[2.2]" />
+                      )}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setSelectedResume(resume)}
+                      className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-[#8B5CF6] to-[#6366F1] hover:opacity-95 text-white font-semibold text-sm rounded-full shadow-sm transition-all"
+                    >
+                      <Eye className="w-4 h-4" />
+                      <span>View</span>
+                    </button>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => setSelectedResume(resume)}
-                    className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-[#8B5CF6] to-[#6366F1] hover:opacity-95 text-white font-semibold text-sm rounded-full shadow-sm transition-all"
-                  >
-                    <Eye className="w-4 h-4" />
-                    <span>View</span>
-                  </button>
-                </div>
+                  {/* Candidate Name & Title */}
+                  <div className="mt-2">
+                    <h3 className="font-bold text-lg text-gray-900 line-clamp-1">
+                      {getFullName(resume)}
+                    </h3>
+                    <p className="text-sm font-medium text-[#4B5563] mt-1 line-clamp-1">
+                      {resume.job_title || "Candidate"}
+                    </p>
+                  </div>
 
-                {/* Candidate Name & Title */}
-                <div className="mt-2">
-                  <h3 className="font-bold text-lg text-gray-900 line-clamp-1">
-                    {getFullName(resume)}
-                  </h3>
-                  <p className="text-sm font-medium text-[#4B5563] mt-1 line-clamp-1">
-                    {resume.job_title || "Candidate"}
-                  </p>
-                </div>
-
-                {/* Divider & Contact Info */}
-                <div className="mt-4 pt-4 border-t border-gray-100 space-y-3">
-                  {resume.email && (
-                    <div className="flex items-center gap-3 text-sm text-[#4B5563] line-clamp-1">
-                      <Mail className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                      <span className="truncate">{resume.email}</span>
-                    </div>
-                  )}
-                  {resume.phone_number && (
-                    <div className="flex items-center gap-3 text-sm text-[#4B5563] line-clamp-1">
-                      <Phone className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                      <span className="truncate">{resume.phone_number}</span>
-                    </div>
-                  )}
-                  {resume.city && (
-                    <div className="flex items-center gap-3 text-sm text-[#4B5563] line-clamp-1">
-                      <MapPin className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                      <span className="truncate">
-                        {resume.city}
-                        {resume.nationality ? `, ${resume.nationality}` : ""}
-                      </span>
-                    </div>
-                  )}
+                  {/* Divider & Contact Info */}
+                  <div className="mt-4 pt-4 border-t border-gray-100 space-y-3">
+                    {resume.email && (
+                      <div className="flex items-center gap-3 text-sm text-[#4B5563] line-clamp-1">
+                        <Mail className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                        <span className="truncate">{resume.email}</span>
+                      </div>
+                    )}
+                    {resume.phone_number && (
+                      <div className="flex items-center gap-3 text-sm text-[#4B5563] line-clamp-1">
+                        <Phone className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                        <span className="truncate">{resume.phone_number}</span>
+                      </div>
+                    )}
+                    {resume.city && (
+                      <div className="flex items-center gap-3 text-sm text-[#4B5563] line-clamp-1">
+                        <MapPin className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                        <span className="truncate">
+                          {resume.city}
+                          {resume.nationality ? `, ${resume.nationality}` : ""}
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
+            ))}
+          </div>
+
+          {/* PAGINATION CONTROLS */}
+          {!loading && resumes.length > 0 && (
+            <div className="flex flex-col sm:flex-row items-center justify-between mt-8 px-2 gap-4">
+              <div className="text-[13px] font-medium text-[#6B7280]">
+                Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1}-{Math.min(currentPage * ITEMS_PER_PAGE, resumes.length)} of {resumes.length}
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="px-4 py-1.5 rounded-full border border-gray-200 text-[#374151] text-[13px] font-semibold hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-white h-[34px] flex items-center justify-center"
+                >
+                  Previous
+                </button>
+
+                <div className="w-[34px] h-[34px] flex items-center justify-center rounded-full text-[13px] font-bold bg-[#6366F1] text-white shadow-[0_4px_10px_rgba(99,102,241,0.3)] border border-transparent">
+                  {currentPage}
+                </div>
+
+                <button
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-4 py-1.5 rounded-full border border-gray-200 text-[#374151] text-[13px] font-semibold hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-white h-[34px] flex items-center justify-center"
+                >
+                  Next
+                </button>
+              </div>
             </div>
-          ))}
-        </div>
+          )}
+        </>
       )}
     </div>
   );

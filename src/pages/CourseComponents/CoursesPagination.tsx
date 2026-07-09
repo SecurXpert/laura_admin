@@ -18,7 +18,7 @@ export const CoursesPagination: React.FC<CoursesPaginationProps> = ({
   const totalPages = Math.ceil(totalFiltered / itemsPerPage);
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-start py-5 mt-4 border-t border-gray-100 gap-6 w-full">
+    <div className="flex flex-col sm:flex-row items-center justify-between py-5 mt-4 border-t border-gray-100 gap-6 w-full">
       <div className="text-[13px] font-medium text-[#6B7280]">
         Showing {(currentPage - 1) * itemsPerPage + 1}-
         {Math.min(currentPage * itemsPerPage, totalFiltered)} of {totalFiltered}
@@ -32,38 +32,9 @@ export const CoursesPagination: React.FC<CoursesPaginationProps> = ({
           Previous
         </button>
 
-        {Array.from({ length: totalPages }).map((_, i) => {
-          const pageNumber = i + 1;
-          if (
-            pageNumber === 1 ||
-            pageNumber === totalPages ||
-            (pageNumber >= currentPage - 1 && pageNumber <= currentPage + 1)
-          ) {
-            return (
-              <button
-                key={pageNumber}
-                onClick={() => onPageChange(pageNumber)}
-                className={`w-[34px] h-[34px] flex items-center justify-center rounded-full text-[13px] font-bold transition-all ${
-                  currentPage === pageNumber
-                    ? "bg-[#6366F1] text-white shadow-[0_4px_10px_rgba(99,102,241,0.3)] border border-transparent"
-                    : "bg-white text-[#374151] border border-gray-200 hover:bg-gray-50 hover:border-gray-300"
-                }`}
-              >
-                {pageNumber}
-              </button>
-            );
-          }
-
-          if (pageNumber === currentPage - 2 || pageNumber === currentPage + 2) {
-            return (
-              <span key={pageNumber} className="text-gray-400 font-bold px-1">
-                ...
-              </span>
-            );
-          }
-
-          return null;
-        })}
+        <div className="w-[34px] h-[34px] flex items-center justify-center rounded-full text-[13px] font-bold bg-[#6366F1] text-white shadow-[0_4px_10px_rgba(99,102,241,0.3)] border border-transparent">
+          {currentPage}
+        </div>
 
         <button
           onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}

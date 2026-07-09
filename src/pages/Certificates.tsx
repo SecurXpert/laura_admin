@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { Award, Search, AlertCircle, RefreshCw, Download, Share2, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { Award, Search, AlertCircle, RefreshCw, Download, Share2, ChevronDown } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 
@@ -256,48 +256,32 @@ export default function Certificates() {
           {/* PAGINATION CONTROLS */}
           {totalPages > 1 && (
             <div className="flex flex-col sm:flex-row items-center justify-between mt-4 px-2 gap-4">
-              {/* Pagination Buttons (Left) */}
+              <div className="text-[13px] font-medium text-[#6B7280]">
+                Showing {((currentPage - 1) * CARDS_PER_PAGE) + 1}-
+                {Math.min(currentPage * CARDS_PER_PAGE, certArray.length)} of {certArray.length}
+              </div>
+
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
-                  className="px-4 py-2 rounded-lg border border-gray-200 flex items-center justify-center text-gray-600 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium shadow-sm"
+                  className="px-4 py-1.5 rounded-full border border-gray-200 text-[#374151] text-[13px] font-semibold hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-white h-[34px] flex items-center justify-center"
                 >
-                  <ChevronLeft className="w-4 h-4 mr-1" /> Previous
+                  Previous
                 </button>
 
-                {/* PAGE NUMBERS */}
-                <div className="hidden sm:flex items-center gap-1 mx-1">
-                  {[...Array(totalPages)].map((_, idx) => {
-                    const pageNum = idx + 1;
-                    return (
-                      <button
-                        key={pageNum}
-                        onClick={() => setCurrentPage(pageNum)}
-                        className={`w-9 h-9 rounded-lg text-sm font-semibold transition-colors border shadow-sm ${currentPage === pageNum
-                          ? "bg-purple-50 text-purple-700 border-purple-200"
-                          : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
-                          }`}
-                      >
-                        {pageNum}
-                      </button>
-                    )
-                  })}
+                <div className="w-[34px] h-[34px] flex items-center justify-center rounded-full text-[13px] font-bold bg-[#6366F1] text-white shadow-[0_4px_10px_rgba(99,102,241,0.3)] border border-transparent">
+                  {currentPage}
                 </div>
 
                 <button
                   onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                   disabled={currentPage === totalPages}
-                  className="px-4 py-2 rounded-lg border border-gray-200 flex items-center justify-center text-gray-600 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium shadow-sm"
+                  className="px-4 py-1.5 rounded-full border border-gray-200 text-[#374151] text-[13px] font-semibold hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-white h-[34px] flex items-center justify-center"
                 >
-                  Next <ChevronRight className="w-4 h-4 ml-1" />
+                  Next
                 </button>
               </div>
-
-              {/* Showing Text (Right) */}
-              <span className="text-sm text-gray-500">
-                Showing <span className="font-bold text-gray-900">{((currentPage - 1) * CARDS_PER_PAGE) + 1}</span> to <span className="font-bold text-gray-900">{Math.min(currentPage * CARDS_PER_PAGE, certArray.length)}</span> of <span className="font-bold text-gray-900">{certArray.length}</span> certificates
-              </span>
             </div>
           )}
         </div>
